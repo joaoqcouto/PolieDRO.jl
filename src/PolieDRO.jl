@@ -1,5 +1,5 @@
 module PolieDRO
 
-include("QuickHull.jl")
+include("ConvexHulls.jl")
 
 end

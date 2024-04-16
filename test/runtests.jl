@@ -1,5 +1,5 @@
 using Test
-include("../src/QuickHull.jl")
+include("../src/ConvexHulls.jl")
 
 # Function to build test matrices for the convex hulls algorithm
 # Returns a matrix with points organized as N D-dimensional hypercubes of increasing size
@@ -32,7 +32,7 @@ end
         @testset "Hypercube $(D)D tests" begin
             # hypercube tests
             X_1 = hypercubes_matrix(N, D)
-            hulls_X_1 = QuickHull.convex_hulls(X_1)
+            hulls_X_1 = ConvexHulls.convex_hulls(X_1)
             for n = 1:N
                 hull = N-n+1
                 @test issetequal(hulls_X_1[hull], X_1[(n-1)*(2^D)+1:(n)*(2^D),:])
@@ -40,7 +40,7 @@ end
     
             # including origin point
             X_2 = vcat([0 for i = 1:D]', X_1)
-            hulls_X_2 = QuickHull.convex_hulls(X_2)
+            hulls_X_2 = ConvexHulls.convex_hulls(X_2)
             for n = 1:N
                 hull = N-n+1
                 if hull==N

@@ -1,4 +1,4 @@
-module QuickHull
+module ConvexHulls
 
 using Polyhedra, LazySets
 
