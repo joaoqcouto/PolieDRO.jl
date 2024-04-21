@@ -1,4 +1,4 @@
-using Test
+using Test, Statistics
 include("../src/ConvexHulls.jl")
 
 # Function to build test matrices for the convex hulls algorithm
@@ -48,6 +48,28 @@ end
                 else
                     @test issetequal(hulls_X_2[hull], X_2[(n-1)*(2^D)+2:(n)*(2^D)+1,:])
                 end
+            end
+        end
+    end
+end
+
+@testset "Probabilities test" begin
+
+    # test for 2 -> 10 4 dimensional convex hulls
+    # probability centers should be equally distributed since all hulls have the same number of points
+    D = 4
+    for N = 2:10
+        @testset "$(N) hypercubes tests" begin
+            # hypercube tests
+            X = hypercubes_matrix(N, D)
+            hulls_X = ConvexHulls.convex_hulls(X)
+            probabilities_X = ConvexHulls.hulls_probabilities(hulls_X, 0.05)
+
+            expected_probability = 1.0
+            for interval in probabilities_X
+                avg_prob = Statistics.mean(interval)
+                @test abs(avg_prob - expected_probability) < 0.00000001 # since it is float math there is an imprecision
+                expected_probability -= 1.0/N
             end
         end
     end
