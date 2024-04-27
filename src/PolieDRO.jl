@@ -23,26 +23,26 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hi
     # base variables
     @variable(model, κ[i=1:nhulls].>=0)
     @variable(model, λ[i=1:nhulls].>=0)
+    @variable(model, β0)
+    @variable(model, β1[i=1:D])
 
     # objective
     @objective(model, Min, sum([κ[i]*p[i][2] - λ[i]*p[i][1] for i=1:nhulls]))
 
     # different loss functions
     if (loss_function == hinge_loss)
-        @variable(model, β0)
-        @variable(model, β1[i=1:D])
-
-
         @variable(model, η[j=1:size(X,1)].>=0) # η associated with each vertex
 
-        # constraints applied for each hull
-        @constraint(model, ct1[i in eachindex(Xhulls), j in Xhulls[i]],(η[j].-sum([κ[l]-λ[l] for l=1:i])).<=0)
-        @constraint(model, ct2[i in eachindex(Xhulls), j in Xhulls[i]],η[j].>=1-y[j]*(X[j,:]⋅β1-β0))
+        # constraints applied for each vertex in each hull
+        @constraint(model, ct1[i in eachindex(Xhulls), j in Xhulls[i]],(η[j]-sum([κ[l]-λ[l] for l=1:i]))<=0)
+        @constraint(model, ct2[i in eachindex(Xhulls), j in Xhulls[i]],η[j]>=1-y[j]*(β1⋅X[j,:]-β0))
 
     elseif (loss_function == logistic_loss)
-
+        # constraint applied for each vertex in each hull
+        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]],(log(exp(-y[j]*(β0+β1⋅X[j,:])))-sum([κ[l]-λ[l] for l=1:i]))<=0)
     elseif (loss_function == msqe_loss)
-
+        # constraint applied for each vertex in each hull
+        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], ((y[j]-(β0+β1⋅X[j,:]))^2-sum([κ[l]-λ[l] for l=1:i]))<=0)
     end
 
     return model
