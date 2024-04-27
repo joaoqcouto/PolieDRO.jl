@@ -35,7 +35,7 @@ end
             hulls_X_1 = ConvexHulls.convex_hulls(X_1)
             for n = 1:N
                 hull = N-n+1
-                @test issetequal(hulls_X_1[hull], X_1[(n-1)*(2^D)+1:(n)*(2^D),:])
+                @test issetequal(hulls_X_1[hull], [i for i in (n-1)*(2^D)+1:(n)*(2^D)])
             end
     
             # including origin point
@@ -44,9 +44,9 @@ end
             for n = 1:N
                 hull = N-n+1
                 if hull==N
-                    @test issetequal(hulls_X_2[hull], X_2[1:(n)*(2^D)+1,:])
+                    @test issetequal(hulls_X_2[hull], [i for i in 1:(n)*(2^D)+1])
                 else
-                    @test issetequal(hulls_X_2[hull], X_2[(n-1)*(2^D)+2:(n)*(2^D)+1,:])
+                    @test issetequal(hulls_X_2[hull], [i for i in (n-1)*(2^D)+2:(n)*(2^D)+1])
                 end
             end
         end
