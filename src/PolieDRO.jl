@@ -31,6 +31,9 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hi
 
     # different loss functions
     if (loss_function == hinge_loss)
+        # classification problem: y values are all either 1 or -1
+        @assert all([y[i] == 1 || y[i] == -1 for i in eachindex(y)]) "There is a value in y other than 1 or -1"
+
         @variable(model, η[j=1:size(X,1)].>=0) # η associated with each vertex
 
         # constraints applied for each vertex in each hull
