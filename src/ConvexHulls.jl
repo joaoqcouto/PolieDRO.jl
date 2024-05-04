@@ -22,13 +22,13 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
     hull = LazySets.convex_hull(Xpoints)
 
     # index mapping the points
-    hull_indices = [findfirst(i -> Xpoints[i] == hull[hi], Xindices) for hi in eachindex(hull)]
+    hull_indices = [Xindices[findfirst(i -> Xpoints[i] == hull[hi], Xindices)] for hi in eachindex(hull)]
     push!(Xhullindices, hull_indices)
 
     # remove already added indices from index list, create new list with remaining points
     # original list of point is needed for the index mapping
-    Xindices = setdiff(Xindices, hull_indices) 
-    X_remaining = setdiff(Xpoints, hull) 
+    Xindices = [i for i in Xindices if !(i in hull_indices)]
+    X_remaining = Xpoints[Xindices]
 
     # while there are more remaining points than D
     # at least D+1 points are necessary for the hulls
@@ -37,12 +37,12 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
         hull = LazySets.convex_hull(X_remaining)
 
         # index map
-        hull_indices = [findfirst(i -> Xpoints[i] == hull[hi], Xindices) for hi in eachindex(hull)]
+        hull_indices = [Xindices[findfirst(i -> Xpoints[i] == hull[hi], Xindices)] for hi in eachindex(hull)]
         push!(Xhullindices, hull_indices)
 
         # remove the points from the remaining set and index set
-        X_remaining = setdiff(X_remaining, hull)
-        Xindices = setdiff(Xindices, hull_indices)
+        Xindices = [i for i in Xindices if !(i in hull_indices)]
+        X_remaining = Xpoints[Xindices]
 
         n_hulls += 1
     end
