@@ -52,7 +52,8 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
         append!(Xhullindices[end], Xindices)
     end
 
-    return Xhullindices
+    # return indices of each hull and indices which are not vertices (inside last set)
+    return Xhullindices, Xindices
 end
 
 #=
@@ -67,8 +68,6 @@ Convex hulls probabilities function
 function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64) where T<:Float64
     @assert error > 0 "Choose a positive error"
     @assert error <= 1 "Choose an error <= 1"
-
-    # TODO: Error must be such that confidence intervals don't overlap?
 
     # vector of probabilities (center of each interval)
     probabilities = []

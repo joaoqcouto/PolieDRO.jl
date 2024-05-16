@@ -1,5 +1,7 @@
-using Test, Statistics
+using Test
+using Statistics, JuMP, HiGHS, UCIData, MLJ
 include("../src/ConvexHulls.jl")
+include("../src/PolieDRO.jl")
 
 # Function to build test matrices for the convex hulls algorithm
 # Returns a matrix with points organized as N D-dimensional hypercubes of increasing size
@@ -32,7 +34,7 @@ end
         @testset "Hypercube $(D)D tests" begin
             # hypercube tests
             X_1 = hypercubes_matrix(N, D)
-            hulls_X_1 = ConvexHulls.convex_hulls(X_1)
+            hulls_X_1, _ = ConvexHulls.convex_hulls(X_1)
             for n = 1:N
                 hull = N-n+1
                 @test issetequal(hulls_X_1[hull], [i for i in (n-1)*(2^D)+1:(n)*(2^D)])
@@ -40,7 +42,7 @@ end
     
             # including origin point
             X_2 = vcat([0 for i = 1:D]', X_1)
-            hulls_X_2 = ConvexHulls.convex_hulls(X_2)
+            hulls_X_2, _ = ConvexHulls.convex_hulls(X_2)
             for n = 1:N
                 hull = N-n+1
                 if hull==N
@@ -62,7 +64,7 @@ end
         @testset "$(N) hypercubes tests" begin
             # hypercube tests
             X = hypercubes_matrix(N, D)
-            hulls_X = ConvexHulls.convex_hulls(X)
+            hulls_X, _ = ConvexHulls.convex_hulls(X)
             probabilities_X = ConvexHulls.hulls_probabilities(hulls_X, 0.05)
 
             expected_probability = 1.0
@@ -72,5 +74,49 @@ end
                 expected_probability -= 1.0/N
             end
         end
+    end
+end
+
+@testset "Iris classification test" begin
+    iris_df = UCIData.dataset("iris")
+    X = iris_df[:,2:5]
+    y = iris_df[:,end]
+
+    (Xtrain, Xtest), (ytrain, ytest) = partition((X, y), 0.8, rng=12345, multi=true)
+
+    Xtrain_m = Matrix{Float64}(Xtrain)
+    Xtest_m = Matrix{Float64}(Xtest)
+
+    # separating each flower
+    flower_types = ["Iris-setosa", "Iris-virginica", "Iris-versicolour"]
+
+    @testset "$(flower_type) HL classification test" for flower_type in flower_types
+        ytrain_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytrain])
+        ytest_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytest])
+
+        # hinge loss
+        model = PolieDRO.build_model(Xtrain_m, ytrain_v, PolieDRO.hinge_loss)
+        PolieDRO.solve_model!(model, HiGHS.Optimizer, silent=true)
+        ymodel = PolieDRO.evaluate_model(model, Xtest_m)
+        ymodel_abs = [yp >= 0 ? 1.0 : -1.0 for yp in ymodel]
+        errors = sum(ymodel_abs.!=ytest_v)
+
+        println("Error % classifying $(flower_type) = $(errors*100/length(ytest_v))% ($(errors)/$(length(ytest_v)) errors)")
+        @test errors/length(ytest_v) < 0.1 # test if accuracy is within 90%
+    end
+
+    @testset "$(flower_type) LL classification test" for flower_type in flower_types
+        ytrain_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytrain])
+        ytest_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytest])
+
+        # logistic loss
+        model = PolieDRO.build_model(Xtrain_m, ytrain_v, PolieDRO.hinge_loss)
+        PolieDRO.solve_model!(model, HiGHS.Optimizer, silent=true)
+        ymodel = PolieDRO.evaluate_model(model, Xtest_m)
+        ymodel_abs = [yp >= 0.5 ? 1.0 : -1.0 for yp in ymodel]
+        errors = sum(ymodel_abs.!=ytest_v)
+
+        println("Error % classifying $(flower_type) = $(errors*100/length(ytest_v))% ($(errors)/$(length(ytest_v)) errors)")
+        @test errors/length(ytest_v) < 0.1 # test if accuracy is within 90%
     end
 end
