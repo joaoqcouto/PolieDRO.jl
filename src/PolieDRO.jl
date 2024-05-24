@@ -26,8 +26,12 @@ See PolieDRO paper, page 11 for formulation
 =#
 function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hinge_loss, significance_level::Float64=0.05) where T<:Float64
     N, D = size(X)
+    println("Calculating convex hulls...")
     Xhulls, not_vertices = ConvexHulls.convex_hulls(X)
+    println("Calculating associated probabilities...")
     p = ConvexHulls.hulls_probabilities(Xhulls, significance_level)
+
+    println("Building JuMP model...")
 
     nhulls = length(Xhulls)
     model = Model()

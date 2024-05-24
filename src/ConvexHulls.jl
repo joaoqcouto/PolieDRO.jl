@@ -18,6 +18,8 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
 
     Xhullindices = Vector{Vector{Int64}}()
 
+    println("Calculating first hull...")
+
     # first convex hull
     hull = LazySets.convex_hull(Xpoints)
 
@@ -34,6 +36,7 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
     # at least D+1 points are necessary for the hulls
     while length(Xindices) > D
         # create another hull
+        println("Calculating hull $(n_hulls)...")
         hull = LazySets.convex_hull(X_remaining)
 
         # index map
@@ -49,6 +52,7 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
 
     # if there are any remaining points add them to the last set
     if length(Xindices) > 0
+        println("Adding remaining points...")
         append!(Xhullindices[end], Xindices)
     end
 

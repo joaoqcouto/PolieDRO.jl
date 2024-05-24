@@ -1,7 +1,10 @@
 using Test
-using Statistics, JuMP, HiGHS, UCIData, MLJ
+using Random, DataFrames
+using Statistics, JuMP, UCIData
+using MLJ, HiGHS, Ipopt, MLJLinearModels, MLJLIBSVMInterface
 include("../src/ConvexHulls.jl")
 include("../src/PolieDRO.jl")
+include("../test/dataset_aux.jl")
 
 # Function to build test matrices for the convex hulls algorithm
 # Returns a matrix with points organized as N D-dimensional hypercubes of increasing size
@@ -77,46 +80,165 @@ end
     end
 end
 
-@testset "Iris classification test" begin
-    iris_df = UCIData.dataset("iris")
-    X = iris_df[:,2:5]
-    y = iris_df[:,end]
+#=
+NOTES: Classification datasets with bad results
+- acute-inflammations-1 : SVC
+- glass-identification : PolieDRO
+- horse-colic : Both
+- mammographic-mass : Both
+- pen-based-recognition-handwritten-digits : PolieDRO
+- wall-following-nav-2 : PolieDRO
+=#
+@testset "Hinge Loss classification tests" begin
+    # loading model to test against
+    @load SVC pkg=LIBSVM
 
-    (Xtrain, Xtest), (ytrain, ytest) = partition((X, y), 0.8, rng=12345, multi=true)
+    # testing on some classification datasets
+    Random.seed!(123)
+    classification_datasets = UCIData.list_datasets("classification")
+    some_datasets = classification_datasets[1:10:end]
 
-    Xtrain_m = Matrix{Float64}(Xtrain)
-    Xtest_m = Matrix{Float64}(Xtest)
+    for dataset in some_datasets
+        println("===================")
+        println("$(dataset) dataset test")
+        println("Fetching dataset...")
+        df = UCIData.dataset(dataset)
+        println("Treating dataset...")
+        Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df; classification=true)
 
-    # separating each flower
-    flower_types = ["Iris-setosa", "Iris-virginica", "Iris-versicolour"]
+        Xtrain_m = Matrix{Float64}(Xtrain)
+        Xtest_m = Matrix{Float64}(Xtest)
 
-    @testset "$(flower_type) HL classification test" for flower_type in flower_types
-        ytrain_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytrain])
-        ytest_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytest])
+        # training PolieDRO
+        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
+        println("Solving PolieDRO model...")
+        PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
+        println("Evaluating PolieDRO model...")
+        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
 
-        # hinge loss
-        model = PolieDRO.build_model(Xtrain_m, ytrain_v, PolieDRO.hinge_loss)
-        PolieDRO.solve_model!(model, HiGHS.Optimizer, silent=true)
-        ymodel = PolieDRO.evaluate_model(model, Xtest_m)
-        ymodel_abs = [yp >= 0 ? 1.0 : -1.0 for yp in ymodel]
-        errors = sum(ymodel_abs.!=ytest_v)
+        # comparing to MLJ SVM
+        println("Fitting SVM...")
+        mach = fit!(machine(SVC(), Xtrain, categorical(ytrain)))
+        println("Evaluating SVM...")
+        ysvm = Vector{Float64}(predict(mach, Xtest))
 
-        println("Error % classifying $(flower_type) = $(errors*100/length(ytest_v))% ($(errors)/$(length(ytest_v)) errors)")
-        @test errors/length(ytest_v) < 0.1 # test if accuracy is within 90%
+        println("Calculating error metrics...")
+        ypoliedro_abs = [yp >= 0 ? 1.0 : -1.0 for yp in ypoliedro]
+        acc_poliedro = sum(ypoliedro_abs.==ytest)*100/length(ytest)
+        acc_svm = sum(ysvm.==ytest)*100/length(ytest)
+
+        println("Accuracy % on $(dataset) dataset")
+        println("PolieDRO = $(acc_poliedro)")
+        println("SVM = $(acc_svm)")
+        println("===================")
+
+        # test against svm-25% performance
+        # model should never be much worse than svm
+        @test (acc_poliedro) >= (acc_svm)/1.25
     end
+end
 
-    @testset "$(flower_type) LL classification test" for flower_type in flower_types
-        ytrain_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytrain])
-        ytest_v = Vector{Float64}([flower==flower_type ? 1.0 : -1.0 for flower in ytest])
+#=
+NOTES: Classification datasets with bad results
+Tá meio fraco
+- thyroid-disease-allhypo (poliedro muito fraco)
+=#
+@testset "Logistic loss classification tests" begin
+    # testing on some classification datasets
+    Random.seed!(123)
+    classification_datasets = UCIData.list_datasets("classification")
+    some_datasets = classification_datasets[1:10:end]
 
-        # logistic loss
-        model = PolieDRO.build_model(Xtrain_m, ytrain_v, PolieDRO.hinge_loss)
-        PolieDRO.solve_model!(model, HiGHS.Optimizer, silent=true)
-        ymodel = PolieDRO.evaluate_model(model, Xtest_m)
-        ymodel_abs = [yp >= 0.5 ? 1.0 : -1.0 for yp in ymodel]
-        errors = sum(ymodel_abs.!=ytest_v)
+    for dataset in some_datasets
+        println("===================")
+        println("$(dataset) dataset test")
+        println("Fetching dataset...")
+        df = UCIData.dataset(dataset)
+        println("Treating dataset...")
+        Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df; classification=true)
 
-        println("Error % classifying $(flower_type) = $(errors*100/length(ytest_v))% ($(errors)/$(length(ytest_v)) errors)")
-        @test errors/length(ytest_v) < 0.1 # test if accuracy is within 90%
+        Xtrain_m = Matrix{Float64}(Xtrain)
+        Xtest_m = Matrix{Float64}(Xtest)
+
+        # training PolieDRO
+        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
+        println("Solving PolieDRO model...")
+        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        println("Evaluating PolieDRO model...")
+        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+
+        # comparing to MLJ Logistic Loss
+        println("Fitting logistic classifier...")
+        mach = fit!(machine(LogisticClassifier(), Xtrain, categorical(ytrain)))
+        println("Evaluating logistic classifier...")
+        ylogistic = Vector{Float64}([MLJ.mode(x) for x in predict(mach, Xtest)])
+
+        println("Calculating error metrics...")
+        ypoliedro_abs = [yp >= 0.5 ? 1.0 : -1.0 for yp in ypoliedro]
+        ylogistic_abs = [yp >= 0.5 ? 1.0 : -1.0 for yp in ylogistic]
+        acc_poliedro = sum(ypoliedro_abs.==ytest)*100/length(ytest)
+        acc_logistic = sum(ylogistic.==ytest)*100/length(ytest)
+
+        println("Accuracy % on $(dataset) dataset")
+        println("PolieDRO = $(acc_poliedro)")
+        println("Logistic loss = $(acc_logistic)")
+        println("===================")
+
+        # test against svm-25% performance
+        # model should never be much worse than svm
+        @test (acc_poliedro) >= (acc_logistic)/1.25
+    end
+end
+
+#=
+NOTES: Regression datasets to check
+(geral) check Lasso
+- cpu-act : (build PolieDRO) basis matrix is ill-conditioned
+- home-mortgage : (results) acc ruim
+- parkinsons-telemonitoring-motor : (build PolieDRO) demorando eternamente pra calcular primeiro hull
+=#
+@testset "MSE Regression tests" begin
+    # testing on some regression datasets
+    Random.seed!(123)
+    regression_datasets = UCIData.list_datasets("regression")
+    some_datasets = regression_datasets[1:10:end]
+
+    for dataset in some_datasets
+        println("===================")
+        println("$(dataset) dataset test")
+        println("Fetching dataset...")
+        df = UCIData.dataset(dataset)
+        println("Treating dataset...")
+        Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df)
+
+        Xtrain_m = Matrix{Float64}(Xtrain)
+        Xtest_m = Matrix{Float64}(Xtest)
+
+        # training PolieDRO
+        println("Building PolieDRO model...")
+        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.msqe_loss)
+        println("Solving PolieDRO model...")
+        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        println("Evaluating PolieDRO model...")
+        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+
+        # comparing to MLJ Lasso
+        println("Fitting Lasso...")
+        mach = fit!(machine(LassoRegressor(), Xtrain, ytrain))
+        println("Evaluating Lasso...")
+        ylasso = predict(mach, Xtest)
+
+        println("Calculating error metrics...")
+        msqe_poliedro = mean([(ypoliedro[i] - ytest[i])^2 for i in eachindex(ytest)])
+        msqe_lasso = mean([(ylasso[i] - ytest[i])^2 for i in eachindex(ytest)])
+
+        println("MSQE on $(dataset) dataset")
+        println("PolieDRO = $(msqe_poliedro)")
+        println("Lasso = $(msqe_lasso)")
+        println("===================")
+
+        # test against lasso+25% performance
+        # model should never be much worse than lasso
+        @test msqe_poliedro <= msqe_lasso*1.25
     end
 end
