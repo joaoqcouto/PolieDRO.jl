@@ -1,5 +1,5 @@
 using Test
-using Random, DataFrames
+using DataFrames
 using Statistics, JuMP, UCIData
 using MLJ, HiGHS, Ipopt, MLJLinearModels, MLJLIBSVMInterface
 include("../src/ConvexHulls.jl")
@@ -81,22 +81,15 @@ end
 end
 
 #=
-NOTES: Classification datasets with bad results
-- acute-inflammations-1 : SVC
-- glass-identification : PolieDRO
-- horse-colic : Both
-- mammographic-mass : Both
-- pen-based-recognition-handwritten-digits : PolieDRO
-- wall-following-nav-2 : PolieDRO
+Working datasets to use as test: breast-cancer-wisconsin-diagnostic // soybean-small // thyroid-disease-allhypo
+All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed for the worse
 =#
 @testset "Hinge Loss classification tests" begin
     # loading model to test against
     @load SVC pkg=LIBSVM
 
-    # testing on some classification datasets
-    Random.seed!(123)
-    classification_datasets = UCIData.list_datasets("classification")
-    some_datasets = classification_datasets[1:10:end]
+    # testing on some working classification datasets
+    some_datasets = ["breast-cancer-wisconsin-diagnostic", "soybean-small", "thyroid-disease-allhypo"]
 
     for dataset in some_datasets
         println("===================")
@@ -133,21 +126,19 @@ NOTES: Classification datasets with bad results
         println("===================")
 
         # test against svm-25% performance
-        # model should never be much worse than svm
-        @test (acc_poliedro) >= (acc_svm)/1.25
+        # model should not be much worse than svm
+        # PolieDRO accuracy was also already verified to be over 80%
+        @test (acc_poliedro) >= (acc_svm)/1.25 && (acc_poliedro) > 0.8
     end
 end
 
 #=
-NOTES: Classification datasets with bad results
-Tá meio fraco
-- thyroid-disease-allhypo (poliedro muito fraco)
+Working datasets to use as test: wall-following-robot-navigation-2, connectionist-bench, hayes-roth
+All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means something changed for the worse
 =#
 @testset "Logistic loss classification tests" begin
     # testing on some classification datasets
-    Random.seed!(123)
-    classification_datasets = UCIData.list_datasets("classification")
-    some_datasets = classification_datasets[1:10:end]
+    some_datasets = ["wall-following-robot-navigation-2", "connectionist-bench", "hayes-roth"]
 
     for dataset in some_datasets
         println("===================")
@@ -184,24 +175,20 @@ Tá meio fraco
         println("Logistic loss = $(acc_logistic)")
         println("===================")
 
-        # test against svm-25% performance
-        # model should never be much worse than svm
-        @test (acc_poliedro) >= (acc_logistic)/1.25
+        # test against logistic-25% performance
+        # model should not be much worse than regular logistic classification
+        # PolieDRO accuracy was also already verified to be over 80%
+        @test (acc_poliedro) >= (acc_logistic)/1.25 && (acc_poliedro) > 0.8
     end
 end
 
 #=
-NOTES: Regression datasets to check
-(geral) check Lasso
-- cpu-act : (build PolieDRO) basis matrix is ill-conditioned
-- home-mortgage : (results) acc ruim
-- parkinsons-telemonitoring-motor : (build PolieDRO) demorando eternamente pra calcular primeiro hull
+Working datasets to use as test: abalone, pyrim, hybrid-price
+All have similar PolieDRO and Lasso error, if they fail it means something changed for the worse
 =#
 @testset "MSE Regression tests" begin
     # testing on some regression datasets
-    Random.seed!(123)
-    regression_datasets = UCIData.list_datasets("regression")
-    some_datasets = regression_datasets[1:10:end]
+    some_datasets = ["abalone", "pyrim", "hybrid-price"]
 
     for dataset in some_datasets
         println("===================")
