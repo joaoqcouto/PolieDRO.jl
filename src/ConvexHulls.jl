@@ -5,7 +5,7 @@ using Polyhedra, LazySets, Distributions
 #=
 Convex hulls function
 - Receives a matrix of points NxD (points are lines, dimensions are columns)
-- Returns a list of convex hulls, each one a matrix in the same structure
+- Returns a list of convex hulls, each one a vector of indices to the points which define the hull
 - First matrix is outermost hull, last matrix is innermost hull
     (+ innermost points if there aren't enough to form another hull)
 =#
@@ -13,58 +13,65 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
     N, D = size(X)
     
     Xpoints = [X[i,:] for i in 1:N]
-    XhullSets = []
+    Xindices = [i for i in eachindex(Xpoints)]
     n_hulls = 1
 
-    # first convex hull and remaining inner points
+    Xhullindices = Vector{Vector{Int64}}()
+
+    println("Calculating first hull...")
+
+    # first convex hull
     hull = LazySets.convex_hull(Xpoints)
-    push!(XhullSets, hull)
-    X_remaining = setdiff(Xpoints, hull)
+
+    # index mapping the points
+    hull_indices = [Xindices[findfirst(i -> Xpoints[i] == hull[hi], Xindices)] for hi in eachindex(hull)]
+    push!(Xhullindices, hull_indices)
+
+    # remove already added indices from index list, create new list with remaining points
+    # original list of point is needed for the index mapping
+    Xindices = [i for i in Xindices if !(i in hull_indices)]
+    X_remaining = Xpoints[Xindices]
 
     # while there are more remaining points than D
     # at least D+1 points are necessary for the hulls
-    while size(X_remaining, 1) > D
+    while length(Xindices) > D
         # create another hull
+        println("Calculating hull $(n_hulls)...")
         hull = LazySets.convex_hull(X_remaining)
 
-        # add it to the set of hulls
-        push!(XhullSets, hull)
+        # index map
+        hull_indices = [Xindices[findfirst(i -> Xpoints[i] == hull[hi], Xindices)] for hi in eachindex(hull)]
+        push!(Xhullindices, hull_indices)
 
-        # remove the points from the remaining set
-        X_remaining = setdiff(X_remaining, hull)
+        # remove the points from the remaining set and index set
+        Xindices = [i for i in Xindices if !(i in hull_indices)]
+        X_remaining = Xpoints[Xindices]
 
         n_hulls += 1
     end
 
     # if there are any remaining points add them to the last set
-    if size(X_remaining, 1) > 0
-        XhullSets[end] = vcat(XhullSets[end], X_remaining)
+    if length(Xindices) > 0
+        println("Adding remaining points...")
+        append!(Xhullindices[end], Xindices)
     end
 
-    # transform hull sets into matrices
-    Xhulls = Vector{Matrix{Float64}}()
-    for hull in XhullSets
-        hullMatrix = reduce(hcat,hull)'
-        push!(Xhulls, hullMatrix)
-    end
-
-    return Xhulls
+    # return indices of each hull and indices which are not vertices (inside last set)
+    return Xhullindices, Xindices
 end
 
 #=
 Convex hulls probabilities function
-- Receives the output of the convex_hulls function, a list of H matrices NxD where each one is a convex hull and an error 0 ⋜ α ⋜ 1
+- Receives the output of the convex_hulls function, a list of vectors where each one contains the indexes to a convex hull and an error 0 ⋜ α ⋜ 1
     - As in the convex hulls output, it is assumed that the hulls are ordered outermost to innermost
     - The error α defines a 1-α confidence interval which will affect the size of the probability intervals
 - Returns a list of tuples of size H
     - Each tuple represents the lower and upper limit of the probability interval assigned to the convex hull with the same index
     - For example, first probability tuple will always be (1,1) since we fix the outermost hull's probability to 1
 =#
-function hulls_probabilities(XHulls::Vector{Matrix{T}}, error::Float64) where T<:Float64
+function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64) where T<:Float64
     @assert error > 0 "Choose a positive error"
     @assert error <= 1 "Choose an error <= 1"
-
-    # TODO: Error must be such that confidence intervals don't overlap?
 
     # vector of probabilities (center of each interval)
     probabilities = []
