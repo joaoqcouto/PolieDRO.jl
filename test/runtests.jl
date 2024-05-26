@@ -1,5 +1,10 @@
-using Test, Statistics
+using Test
+using DataFrames
+using Statistics, JuMP, UCIData
+using MLJ, HiGHS, Ipopt, MLJLinearModels, MLJLIBSVMInterface
 include("../src/ConvexHulls.jl")
+include("../src/PolieDRO.jl")
+include("../test/dataset_aux.jl")
 
 # Function to build test matrices for the convex hulls algorithm
 # Returns a matrix with points organized as N D-dimensional hypercubes of increasing size
@@ -32,21 +37,21 @@ end
         @testset "Hypercube $(D)D tests" begin
             # hypercube tests
             X_1 = hypercubes_matrix(N, D)
-            hulls_X_1 = ConvexHulls.convex_hulls(X_1)
+            hulls_X_1, _ = ConvexHulls.convex_hulls(X_1)
             for n = 1:N
                 hull = N-n+1
-                @test issetequal(hulls_X_1[hull], X_1[(n-1)*(2^D)+1:(n)*(2^D),:])
+                @test issetequal(hulls_X_1[hull], [i for i in (n-1)*(2^D)+1:(n)*(2^D)])
             end
     
             # including origin point
             X_2 = vcat([0 for i = 1:D]', X_1)
-            hulls_X_2 = ConvexHulls.convex_hulls(X_2)
+            hulls_X_2, _ = ConvexHulls.convex_hulls(X_2)
             for n = 1:N
                 hull = N-n+1
                 if hull==N
-                    @test issetequal(hulls_X_2[hull], X_2[1:(n)*(2^D)+1,:])
+                    @test issetequal(hulls_X_2[hull], [i for i in 1:(n)*(2^D)+1])
                 else
-                    @test issetequal(hulls_X_2[hull], X_2[(n-1)*(2^D)+2:(n)*(2^D)+1,:])
+                    @test issetequal(hulls_X_2[hull], [i for i in (n-1)*(2^D)+2:(n)*(2^D)+1])
                 end
             end
         end
@@ -62,7 +67,7 @@ end
         @testset "$(N) hypercubes tests" begin
             # hypercube tests
             X = hypercubes_matrix(N, D)
-            hulls_X = ConvexHulls.convex_hulls(X)
+            hulls_X, _ = ConvexHulls.convex_hulls(X)
             probabilities_X = ConvexHulls.hulls_probabilities(hulls_X, 0.05)
 
             expected_probability = 1.0
@@ -72,5 +77,155 @@ end
                 expected_probability -= 1.0/N
             end
         end
+    end
+end
+
+#=
+Working datasets to use as test: breast-cancer-wisconsin-diagnostic // soybean-small // thyroid-disease-allhypo
+All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed for the worse
+=#
+@testset "Hinge Loss classification tests" begin
+    # loading model to test against
+    @load SVC pkg=LIBSVM
+
+    # testing on some working classification datasets
+    some_datasets = ["breast-cancer-wisconsin-diagnostic", "soybean-small", "thyroid-disease-allhypo"]
+
+    for dataset in some_datasets
+        println("===================")
+        println("$(dataset) dataset test")
+        println("Fetching dataset...")
+        df = UCIData.dataset(dataset)
+        println("Treating dataset...")
+        Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df; classification=true)
+
+        Xtrain_m = Matrix{Float64}(Xtrain)
+        Xtest_m = Matrix{Float64}(Xtest)
+
+        # training PolieDRO
+        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
+        println("Solving PolieDRO model...")
+        PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
+        println("Evaluating PolieDRO model...")
+        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+
+        # comparing to MLJ SVM
+        println("Fitting SVM...")
+        mach = fit!(machine(SVC(), Xtrain, categorical(ytrain)))
+        println("Evaluating SVM...")
+        ysvm = Vector{Float64}(predict(mach, Xtest))
+
+        println("Calculating error metrics...")
+        ypoliedro_abs = [yp >= 0 ? 1.0 : -1.0 for yp in ypoliedro]
+        acc_poliedro = sum(ypoliedro_abs.==ytest)*100/length(ytest)
+        acc_svm = sum(ysvm.==ytest)*100/length(ytest)
+
+        println("Accuracy % on $(dataset) dataset")
+        println("PolieDRO = $(acc_poliedro)")
+        println("SVM = $(acc_svm)")
+        println("===================")
+
+        # test against svm-25% performance
+        # model should not be much worse than svm
+        # PolieDRO accuracy was also already verified to be over 80%
+        @test (acc_poliedro) >= (acc_svm)/1.25 && (acc_poliedro) > 0.8
+    end
+end
+
+#=
+Working datasets to use as test: wall-following-robot-navigation-2, connectionist-bench, hayes-roth
+All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means something changed for the worse
+=#
+@testset "Logistic loss classification tests" begin
+    # testing on some classification datasets
+    some_datasets = ["wall-following-robot-navigation-2", "connectionist-bench", "hayes-roth"]
+
+    for dataset in some_datasets
+        println("===================")
+        println("$(dataset) dataset test")
+        println("Fetching dataset...")
+        df = UCIData.dataset(dataset)
+        println("Treating dataset...")
+        Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df; classification=true)
+
+        Xtrain_m = Matrix{Float64}(Xtrain)
+        Xtest_m = Matrix{Float64}(Xtest)
+
+        # training PolieDRO
+        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
+        println("Solving PolieDRO model...")
+        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        println("Evaluating PolieDRO model...")
+        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+
+        # comparing to MLJ Logistic Loss
+        println("Fitting logistic classifier...")
+        mach = fit!(machine(LogisticClassifier(), Xtrain, categorical(ytrain)))
+        println("Evaluating logistic classifier...")
+        ylogistic = Vector{Float64}([MLJ.mode(x) for x in predict(mach, Xtest)])
+
+        println("Calculating error metrics...")
+        ypoliedro_abs = [yp >= 0.5 ? 1.0 : -1.0 for yp in ypoliedro]
+        ylogistic_abs = [yp >= 0.5 ? 1.0 : -1.0 for yp in ylogistic]
+        acc_poliedro = sum(ypoliedro_abs.==ytest)*100/length(ytest)
+        acc_logistic = sum(ylogistic.==ytest)*100/length(ytest)
+
+        println("Accuracy % on $(dataset) dataset")
+        println("PolieDRO = $(acc_poliedro)")
+        println("Logistic loss = $(acc_logistic)")
+        println("===================")
+
+        # test against logistic-25% performance
+        # model should not be much worse than regular logistic classification
+        # PolieDRO accuracy was also already verified to be over 80%
+        @test (acc_poliedro) >= (acc_logistic)/1.25 && (acc_poliedro) > 0.8
+    end
+end
+
+#=
+Working datasets to use as test: abalone, pyrim, hybrid-price
+All have similar PolieDRO and Lasso error, if they fail it means something changed for the worse
+=#
+@testset "MSE Regression tests" begin
+    # testing on some regression datasets
+    some_datasets = ["abalone", "pyrim", "hybrid-price"]
+
+    for dataset in some_datasets
+        println("===================")
+        println("$(dataset) dataset test")
+        println("Fetching dataset...")
+        df = UCIData.dataset(dataset)
+        println("Treating dataset...")
+        Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df)
+
+        Xtrain_m = Matrix{Float64}(Xtrain)
+        Xtest_m = Matrix{Float64}(Xtest)
+
+        # training PolieDRO
+        println("Building PolieDRO model...")
+        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.msqe_loss)
+        println("Solving PolieDRO model...")
+        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        println("Evaluating PolieDRO model...")
+        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+
+        # comparing to MLJ Lasso
+        println("Fitting Lasso...")
+        mach = fit!(machine(LassoRegressor(), Xtrain, ytrain))
+        println("Evaluating Lasso...")
+        ylasso = predict(mach, Xtest)
+
+        println("Calculating error metrics...")
+        msqe_poliedro = mean([(ypoliedro[i] - ytest[i])^2 for i in eachindex(ytest)])
+        msqe_lasso = mean([(ylasso[i] - ytest[i])^2 for i in eachindex(ytest)])
+
+        println("MSQE on $(dataset) dataset")
+        println("PolieDRO = $(msqe_poliedro)")
+        println("Lasso = $(msqe_lasso)")
+        println("===================")
+
+        # test against lasso+25% performance
+        # model should never be much worse than lasso
+        @test msqe_poliedro <= msqe_lasso*1.25
     end
 end
