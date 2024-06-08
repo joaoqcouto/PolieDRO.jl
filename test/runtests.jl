@@ -95,7 +95,13 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
         println("===================")
         println("$(dataset) dataset test")
         println("Fetching dataset...")
-        df = UCIData.dataset(dataset)
+        df = nothing
+        try
+            df = UCIData.dataset(dataset)
+        catch
+            println("Failed to fetch $(dataset), skipping")
+            continue
+        end
         println("Treating dataset...")
         Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df; classification=true)
 
@@ -144,7 +150,13 @@ All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means somethi
         println("===================")
         println("$(dataset) dataset test")
         println("Fetching dataset...")
-        df = UCIData.dataset(dataset)
+        df = nothing
+        try
+            df = UCIData.dataset(dataset)
+        catch
+            println("Failed to fetch $(dataset), skipping")
+            continue
+        end
         println("Treating dataset...")
         Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df; classification=true)
 
@@ -194,7 +206,13 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
         println("===================")
         println("$(dataset) dataset test")
         println("Fetching dataset...")
-        df = UCIData.dataset(dataset)
+        df = nothing
+        try
+            df = UCIData.dataset(dataset)
+        catch
+            println("Failed to fetch $(dataset), skipping")
+            continue
+        end
         println("Treating dataset...")
         Xtrain, Xtest, ytrain, ytest = dataset_aux.treat_df(df)
 
