@@ -64,7 +64,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hi
         @assert all([y[i] == 1 || y[i] == -1 for i in eachindex(y)]) "There is a value in y other than 1 or -1"
 
         # constraint applied for each vertex in each hull
-        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], (log(1 + exp(y[j]*(β0+β1⋅X[j,:])))-sum([κ[l]-λ[l] for l=1:i]))<=0)
+        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], (log(1 + exp(-y[j]*(β0+β1⋅X[j,:])))-sum([κ[l]-λ[l] for l=1:i]))<=0)
     elseif (loss_function == msqe_loss)
         # constraint applied for each vertex in each hull
         @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], ((y[j]-(β0+β1⋅X[j,:]))^2-sum([κ[l]-λ[l] for l=1:i]))<=0)
@@ -111,7 +111,7 @@ function evaluate_model(model::PolieDROModel, X::Matrix{T}) where T<:Float64
 
     elseif (model.loss_function == logistic_loss)
         # log loss evaluation
-        return [(model.β0 + model.β1'X[i,:])/(1 + model.β0 + model.β1'X[i,:]) for i=axes(X,1)]
+        return [exp(model.β0 + model.β1'X[i,:])/(1+exp(model.β0 + model.β1'X[i,:])) for i=axes(X,1)]
 
     elseif (model.loss_function == msqe_loss)
         # msqe loss evaluation
