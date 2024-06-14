@@ -1,5 +1,5 @@
 module dataset_aux
-using UCIData, DataFrames, CategoricalArrays, MLJ
+using DataFrames, CategoricalArrays, MLJ, StatsBase
 
 # one hot encoding function
 function one_hot_encode(df::DataFrame)::DataFrame
@@ -73,6 +73,14 @@ function treat_df(df; classification=false)
         if eltype(X[!, col]) <: Integer
             X[!, col] = Float64.(X[!, col])
         end
+    end
+
+    # standardize X
+    X = mapcols(zscore, X)
+
+    # standardize y if regression
+    if !classification
+        y = zscore(y)
     end
 
     (Xtrain, Xtest), (ytrain, ytest) = partition((X, y), 0.8, rng=12345, multi=true)

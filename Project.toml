@@ -11,10 +11,10 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Polyhedra = "67491407-f73d-577b-9b50-8179a7c68029"
 
 [compat]
-Polyhedra = "0.7"
 Distributions = "0.25"
-Statistics = "1"
 LazySets = "2"
+Polyhedra = "0.7"
+Statistics = "1"
 julia = "1"
 
 [extras]
@@ -26,8 +26,9 @@ MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJLIBSVMInterface = "61c7150f-6c77-4bb1-949c-13197eac2a52"
 MLJLinearModels = "6ee0df7b-362f-4a72-a706-9e79364fb692"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 UCIData = "2dacb708-9dd8-11e9-1001-07df1c52a9e4"
 
 [targets]
-test = ["CategoricalArrays", "DataFrames", "HiGHS", "Ipopt", "MLJ", "MLJLIBSVMInterface", "MLJLinearModels", "Statistics", "Test", "UCIData"]
+test = ["CategoricalArrays", "DataFrames", "HiGHS", "Ipopt", "MLJ", "MLJLIBSVMInterface", "MLJLinearModels", "Statistics", "StatsBase", "Test", "UCIData"]

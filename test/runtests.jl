@@ -81,7 +81,7 @@ end
 end
 
 #=
-Working datasets to use as test: breast-cancer-wisconsin-diagnostic // soybean-small // thyroid-disease-allhypo
+Testing on verified datasets
 All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed for the worse
 =#
 @testset "Hinge Loss classification tests" begin
@@ -89,7 +89,7 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
     @load SVC pkg=LIBSVM
 
     # testing on some working classification datasets
-    some_datasets = ["breast-cancer-wisconsin-diagnostic", "soybean-small", "thyroid-disease-allhypo"]
+    some_datasets = ["balloons-a", "banknote-authentication", "breast-cancer-wisconsin-diagnostic"]
 
     for dataset in some_datasets
         println("===================")
@@ -139,12 +139,12 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
 end
 
 #=
-Working datasets to use as test: wall-following-robot-navigation-2, connectionist-bench, hayes-roth
+Testing on verified datasets
 All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means something changed for the worse
 =#
 @testset "Logistic loss classification tests" begin
     # testing on some classification datasets
-    some_datasets = ["wall-following-robot-navigation-2", "connectionist-bench", "hayes-roth"]
+    some_datasets = ["balloons-a", "connectionist-bench", "hayes-roth"]
 
     for dataset in some_datasets
         println("===================")
@@ -195,12 +195,12 @@ All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means somethi
 end
 
 #=
-Working datasets to use as test: abalone, pyrim, hybrid-price
+Testing on verified datasets
 All have similar PolieDRO and Lasso error, if they fail it means something changed for the worse
 =#
 @testset "MSE Regression tests" begin
     # testing on some regression datasets
-    some_datasets = ["abalone", "pyrim", "hybrid-price"]
+    some_datasets = ["abalone", "auto-mpg", "beer-aroma"]
 
     for dataset in some_datasets
         println("===================")
