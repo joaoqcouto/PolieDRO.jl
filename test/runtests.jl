@@ -89,7 +89,7 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
     @load SVC pkg=LIBSVM
 
     # testing on some working classification datasets
-    some_datasets = ["balloons-a", "banknote-authentication", "breast-cancer-wisconsin-diagnostic"]
+    some_datasets = ["balloons-a", "breast-cancer-wisconsin-diagnostic", "iris"]
 
     for dataset in some_datasets
         println("===================")
