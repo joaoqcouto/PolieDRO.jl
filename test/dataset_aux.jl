@@ -57,6 +57,12 @@ function treat_df(df; classification=false)
     # one-hot encoding categorical variables in X
     X = one_hot_encode(X)
 
+    # drop duplicates
+    mask = nonunique(X)
+    remove_idxs = [i for i in eachindex(mask) if mask[i]]
+    deleteat!(X, remove_idxs)
+    deleteat!(y, remove_idxs)
+
     # if classification, assert y column is 1 and -1
     # 1 will be given to whatever is the first value of the y column
     # if regression, assure it's a float vector
@@ -77,6 +83,17 @@ function treat_df(df; classification=false)
 
     # standardize X
     X = mapcols(zscore, X)
+
+    # removing NaN columns
+    threshold = 0.3 * nrow(X)
+    col_names = names(X)
+    cols_to_drop = []
+    for col in col_names
+        if count(isnan, X[!, col]) > threshold
+            push!(cols_to_drop, col)
+        end
+    end
+    X = select(X, Not(cols_to_drop))
 
     # standardize y if regression
     if !classification
