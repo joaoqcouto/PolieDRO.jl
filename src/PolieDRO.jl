@@ -26,6 +26,18 @@ See PolieDRO paper, page 11 for formulation
 =#
 function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hinge_loss, significance_level::Float64=0.05) where T<:Float64
     N, D = size(X)
+
+    # checks on matrices to assert consistencies
+    @assert length(y) == N "X matrix and y vector sizes do not match ($(N)x$(D) and $(length(y)))"
+    @assert N>D "Too few points (at least $(D+1) for a dimension of $(D))"
+
+    # no NaN or infinite values allowed
+    @assert all(isfinite, X) "No infinite/NaN values allowed in X matrix"
+    @assert all(isfinite, y) "No infinite/NaN values allowed in y vector"
+
+    # no duplicate rows in X matrix
+    @assert length(unique(eachrow(X))) == N "No duplicate rows allowed in X matrix"
+
     println("Calculating convex hulls...")
     Xhulls, not_vertices = ConvexHulls.convex_hulls(X)
     println("Calculating associated probabilities...")
