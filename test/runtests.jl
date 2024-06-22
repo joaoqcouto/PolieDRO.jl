@@ -200,7 +200,7 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
 =#
 @testset "MSE Regression tests" begin
     # testing on some regression datasets
-    some_datasets = ["abalone", "auto-mpg", "beer-aroma"]
+    some_datasets = ["auto-mpg", "housing", "yacht-hydrodynamics"]
 
     for dataset in some_datasets
         println("===================")

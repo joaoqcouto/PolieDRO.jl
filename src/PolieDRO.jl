@@ -1,6 +1,6 @@
 module PolieDRO
 
-using JuMP, LinearAlgebra
+using JuMP
 include("ConvexHulls.jl")
 
 @enum LossFunctions hinge_loss logistic_loss msqe_loss
@@ -65,21 +65,25 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hi
         # classification problem: y values are all either 1 or -1
         @assert all([y[i] == 1 || y[i] == -1 for i in eachindex(y)]) "There is a value in y other than 1 or -1"
 
-        @variable(model, η[j=1:size(X,1)].>=0) # η associated with each vertex
+        vert_idxs = Iterators.flatten(Xhulls) # every vertex index
+        @variable(model, η[j in vert_idxs].>=0) # η associated with each vertex (needs to be indexed like so for constraint ct2)
 
-        # constraints applied for each vertex in each hull
-        @constraint(model, ct1[i in eachindex(Xhulls), j in Xhulls[i]],(η[j]-sum([κ[l]-λ[l] for l=1:i]))<=0)
-        @constraint(model, ct2[i in eachindex(Xhulls), j in Xhulls[i]],η[j]>=1-y[j]*(β1⋅X[j,:]-β0))
+        # constraint applied for each hull
+        @constraint(model, ct1[i in eachindex(Xhulls)],(sum(η[j] for j in Xhulls[i])-sum([κ[l]-λ[l] for l=1:i]))<=0)
+        # or should be (sum(η)-sum([κ[l]-λ[l] for l=1:i]))<=0
+
+        # constraint applied for each vertex in each hull
+        @constraint(model, ct2[i in eachindex(Xhulls), j in Xhulls[i]],η[j]>=1-y[j]*(sum(β1[k]*X[j,k] for k in eachindex(β1))-β0))
 
     elseif (loss_function == logistic_loss)
         # classification problem: y values are all either 1 or -1
         @assert all([y[i] == 1 || y[i] == -1 for i in eachindex(y)]) "There is a value in y other than 1 or -1"
 
         # constraint applied for each vertex in each hull
-        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], (log(1 + exp(-y[j]*(β0+β1⋅X[j,:])))-sum([κ[l]-λ[l] for l=1:i]))<=0)
+        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], (log(1 + exp(-y[j]*(β0+sum(β1[k]*X[j,k] for k in eachindex(β1)))))-sum([κ[l]-λ[l] for l=1:i]))<=0)
     elseif (loss_function == msqe_loss)
         # constraint applied for each vertex in each hull
-        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], ((y[j]-(β0+β1⋅X[j,:]))^2-sum([κ[l]-λ[l] for l=1:i]))<=0)
+        @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], ((y[j]-(β0+sum(β1[k]*X[j,k] for k in eachindex(β1))))^2-sum([κ[l]-λ[l] for l=1:i]))<=0)
     end
 
     return PolieDROModel(loss_function, model, -Inf64, [], false)
