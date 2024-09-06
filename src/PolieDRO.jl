@@ -5,7 +5,7 @@ include("ConvexHulls.jl")
 
 # Enum to store the implemented loss function values
 # Each one is explained in more detail in the README.md file
-@enum LossFunctions hinge_loss logistic_loss msqe_loss
+@enum LossFunctions hinge_loss logistic_loss mse_loss
 
 #=
 PolieDRO model structure
@@ -105,7 +105,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hi
 
         # constraint applied for each vertex in each hull
         @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], (log(1 + exp(-y[j]*(β0+sum(β1[k]*X[j,k] for k in eachindex(β1)))))-sum([κ[l]-λ[l] for l=1:i]))<=0)
-    elseif (loss_function == msqe_loss)
+    elseif (loss_function == mse_loss)
         # constraint applied for each vertex in each hull
         @constraint(model, ct[i in eachindex(Xhulls), j in Xhulls[i]], ((y[j]-(β0+sum(β1[k]*X[j,k] for k in eachindex(β1))))^2-sum([κ[l]-λ[l] for l=1:i]))<=0)
     end
@@ -122,7 +122,7 @@ Modifies the struct with the results and sets the 'optimized' bool in it to true
 # Arguments
 - 'model::PolieDROModel': A PolieDRO model struct, as given by the build_model function, to be solved
 - 'optimizer': An optimizer as the ones used to solve JuMP models
-    - NOTE: For the logistic and MSQE models, a nonlinear solver is necessary
+    - NOTE: For the logistic and MSE models, a nonlinear solver is necessary
 - 'silent::Bool': Sets the flag to solve the model silently (without logs)
     - Default value: false
 =#
@@ -150,7 +150,7 @@ Given an optimized PolieDRO model and a matrix of points, evaluate these points 
 # Arguments
 - 'model::PolieDROModel': A PolieDRO model struct, as given by the build_model function, to be solved
 - 'optimizer': An optimizer as the ones used to solve JuMP models
-    - NOTE: For the logistic and MSQE models, a nonlinear solver is necessary
+    - NOTE: For the logistic and MSE models, a nonlinear solver is necessary
 - 'silent::Bool': Sets the flag to solve the model silently (without logs)
     - Default value: false
 
@@ -172,8 +172,8 @@ function evaluate_model(model::PolieDROModel, X::Matrix{T}) where T<:Float64
         # log loss evaluation
         return [exp(model.β0 + model.β1'X[i,:])/(1+exp(model.β0 + model.β1'X[i,:])) for i=axes(X,1)]
 
-    elseif (model.loss_function == msqe_loss)
-        # msqe loss evaluation
+    elseif (model.loss_function == mse_loss)
+        # mse loss evaluation
         return [model.β0 + model.β1'X[i,:] for i=axes(X,1)]
 
     end

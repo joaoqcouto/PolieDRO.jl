@@ -221,7 +221,7 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
 
         # training PolieDRO
         println("Building PolieDRO model...")
-        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.msqe_loss)
+        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)
         println("Solving PolieDRO model...")
         PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
         println("Evaluating PolieDRO model...")
@@ -234,16 +234,16 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
         ylasso = predict(mach, Xtest)
 
         println("Calculating error metrics...")
-        msqe_poliedro = mean([(ypoliedro[i] - ytest[i])^2 for i in eachindex(ytest)])
-        msqe_lasso = mean([(ylasso[i] - ytest[i])^2 for i in eachindex(ytest)])
+        mse_poliedro = mean([(ypoliedro[i] - ytest[i])^2 for i in eachindex(ytest)])
+        mse_lasso = mean([(ylasso[i] - ytest[i])^2 for i in eachindex(ytest)])
 
-        println("MSQE on $(dataset) dataset")
-        println("PolieDRO = $(msqe_poliedro)")
-        println("Lasso = $(msqe_lasso)")
+        println("MSE on $(dataset) dataset")
+        println("PolieDRO = $(mse_poliedro)")
+        println("Lasso = $(mse_lasso)")
         println("===================")
 
         # test against lasso+25% performance
         # model should never be much worse than lasso
-        @test msqe_poliedro <= msqe_lasso*1.25
+        @test mse_poliedro <= mse_lasso*1.25
     end
 end
