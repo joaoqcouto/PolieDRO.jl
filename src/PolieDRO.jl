@@ -3,8 +3,20 @@ module PolieDRO
 using JuMP
 include("ConvexHulls.jl")
 
+# Enum to store the implemented loss function values
+# Each one is explained in more detail in the README.md file
 @enum LossFunctions hinge_loss logistic_loss msqe_loss
 
+#=
+PolieDRO model structure
+
+# Fields
+- 'loss_function::LossFunctions': enum within the given possible implemented loss functions
+- 'model::GenericModel': JuMP model where the DRO problem is defined
+- 'β0::Float64': The intercept term of the model solution
+- 'β1::Vector{Float64}': The vector of coefficients of the model solution
+- 'optimized::Bool': If the model has been solved or not
+=#
 mutable struct PolieDROModel
     loss_function::LossFunctions
     model::GenericModel
@@ -15,14 +27,26 @@ end
 
 #=
 Build model function
-- Receives a matrix of points, the loss function (within some options) and the significance level
-- Calculates the convex hulls of the points and their associated probabilities
-- Builds and returns a POlieDROModel struct, which wraps:
-    - The loss function used
-    - The JuMP model built
-    - β0 and β1 coefficients
-    - If it has been optimized or not
-See PolieDRO paper, page 11 for formulation
+
+Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for the specified loss function.
+
+# Arguments
+- 'X::Matrix{T}': Matrix NxD of points in which the model is trained (N = number of points, D = dimension of points)
+- 'y::Vector{T}': Dependent variable vector relative to the points in the matrix X (size N)
+- 'loss_function::LossFunctions': One of the given loss functions implemented in the enumerator
+    - Default value: hinge_loss (for the Hinge Loss classification model)
+- 'significance_level::Float64': Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
+    - Default value: 0.05
+
+# Returns
+- An unsolved PolieDROModel struct, that can be solved using the solve_model function
+
+# Assertions
+- X and Y must match in sizes (NxD and N)
+- N must be larger than D (no high dimensional problems)
+- No infinite or NaN values in either X or y
+- No duplicate points in X
+- For classification models (hinge and logistic loss) all values in y must be either 1 or -1
 =#
 function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions=hinge_loss, significance_level::Float64=0.05) where T<:Float64
     N, D = size(X)
@@ -91,9 +115,16 @@ end
 
 #=
 Solve model function
-- Receives the PolieDRO model struct and an optimizer
-- Solves the JuMP model within the struct
-- Updates the struct (adds in the coefficient values and switches 'optimized' bool to true)
+
+Uses the given solver to solve the PolieDRO model.
+Modifies the struct with the results and sets the 'optimized' bool in it to true
+
+# Arguments
+- 'model::PolieDROModel': A PolieDRO model struct, as given by the build_model function, to be solved
+- 'optimizer': An optimizer as the ones used to solve JuMP models
+    - NOTE: For the logistic and MSQE models, a nonlinear solver is necessary
+- 'silent::Bool': Sets the flag to solve the model silently (without logs)
+    - Default value: false
 =#
 function solve_model!(model::PolieDROModel, optimizer; silent::Bool=false)
     set_optimizer(model.model, optimizer)
@@ -113,10 +144,22 @@ end
 
 #=
 Evaluate model function
-- Receives the PolieDRO model struct (assumes it's solved) and a matrix of points to evaluate
-- Uses the model coefficients to evaluate each point
-- Returns the Y vector for the solved points
-    !OBS: Hinge and Logistic Loss don't return -1 and 1 vectors but SVM and sigmoid values
+
+Given an optimized PolieDRO model and a matrix of points, evaluate these points in the model and returns the associated dependent variable for each one in a vector.
+
+# Arguments
+- 'model::PolieDROModel': A PolieDRO model struct, as given by the build_model function, to be solved
+- 'optimizer': An optimizer as the ones used to solve JuMP models
+    - NOTE: For the logistic and MSQE models, a nonlinear solver is necessary
+- 'silent::Bool': Sets the flag to solve the model silently (without logs)
+    - Default value: false
+
+# Returns
+- The y vector of evaluated points associated with the X matrix
+    - OBS: Hinge and Logistic Loss don't return vectors with -1 and 1 values but SVM and sigmoid values
+
+# Assertions
+- Model must be optimized
 =#
 function evaluate_model(model::PolieDROModel, X::Matrix{T}) where T<:Float64
     @assert model.optimized "Model has not been optimized"

@@ -4,10 +4,32 @@ using JuMP, HiGHS, Distributions
 
 #=
 Convex hulls function
-- Receives a matrix of points NxD (points are lines, dimensions are columns)
-- Returns a list of convex hulls, each one a vector of indices to the points which define the hull
-- First matrix is outermost hull, last matrix is innermost hull
-    (+ innermost points if there aren't enough to form another hull)
+
+Calculates the convex hulls associated with the given matrix of points
+Calculates the outer hull, removes the points present in the hulls, calculate the inner hull, repeat to calculate all hulls
+*Currently does this with a LP model where it tries to create each point with a convex combination of the rest
+*Looking into faster ways of solving this problem, since it is by far the biggest bottleneck
+
+# Arguments
+- 'X::Matrix{T}': Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
+
+# Returns
+- List of indices of each hull in the form:
+    [
+        [
+            (index of point 1 in outermost hull),
+            (index of point 2 in outermost hull),
+            etc.
+        ],
+        [
+            (index of point 1 in inner hull 1),
+            (index of point 2 in inner hull 1),
+            etc.
+        ],
+        etc.
+    ]
+- List of indices which are not vertices
+    - The last hull includes its inner points, so some of the points inside it are not vertices of the hull
 =#
 function convex_hulls(X::Matrix{T}) where T<:Float64
     N, D = size(X)
@@ -102,13 +124,30 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
 end
 
 #=
-Convex hulls probabilities function
-- Receives the output of the convex_hulls function, a list of vectors where each one contains the indexes to a convex hull and an error 0 ⋜ α ⋜ 1
-    - As in the convex hulls output, it is assumed that the hulls are ordered outermost to innermost
-    - The error α defines a 1-α confidence interval which will affect the size of the probability intervals
-- Returns a list of tuples of size H
-    - Each tuple represents the lower and upper limit of the probability interval assigned to the convex hull with the same index
-    - For example, first probability tuple will always be (1,1) since we fix the outermost hull's probability to 1
+Hulls probabilities function
+
+Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for the specified loss function.
+
+# Arguments
+- 'X::Matrix{T}': Matrix NxD of points in which the model is trained (N = number of points, D = dimension of points)
+- 'y::Vector{T}': Dependent variable vector relative to the points in the matrix X (size N)
+- 'loss_function::LossFunctions': One of the given loss functions implemented in the enumerator
+    - Default value: hinge_loss (for the Hinge Loss classification model)
+- 'significance_level::Float64': Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
+    - Default value: 0.05
+
+# Returns
+- List of tuples of the probability intervals associated with each convex hull in the form:
+    [
+        [(lower end of the interval), (upper end of the interval),],            <= interval for outermost hull
+        [(lower end of the interval), (upper end of the interval),],            <= interval for inner hull 1
+        etc.
+    ]
+    List is the size of the given list of hulls.
+    First tuple is always (1,1) because first hull contains all points
+    
+# Assertions
+- Error must be positive within 0 and 1
 =#
 function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64) where T<:Float64
     @assert error > 0 "Choose a positive error"
