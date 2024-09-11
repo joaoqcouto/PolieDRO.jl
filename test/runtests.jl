@@ -109,11 +109,11 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
         Xtest_m = Matrix{Float64}(Xtest)
 
         # training PolieDRO
-        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
+        model, hl_evaluator = PolieDRO.build_model(Xtrain_m, ytrain; loss_function=PolieDRO.hinge_loss)
         println("Solving PolieDRO model...")
         PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
         println("Evaluating PolieDRO model...")
-        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+        ypoliedro = hl_evaluator(model, Xtest_m)
 
         # comparing to MLJ SVM
         println("Fitting SVM...")
@@ -164,11 +164,11 @@ All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means somethi
         Xtest_m = Matrix{Float64}(Xtest)
 
         # training PolieDRO
-        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
+        model, ll_evaluator = PolieDRO.build_model(Xtrain_m, ytrain; loss_function=PolieDRO.logistic_loss)
         println("Solving PolieDRO model...")
         PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
         println("Evaluating PolieDRO model...")
-        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+        ypoliedro = ll_evaluator(model, Xtest_m)
 
         # comparing to MLJ Logistic Loss
         println("Fitting logistic classifier...")
@@ -221,11 +221,11 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
 
         # training PolieDRO
         println("Building PolieDRO model...")
-        model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)
+        model, mse_evaluator = PolieDRO.build_model(Xtrain_m, ytrain; loss_function=PolieDRO.mse_loss)
         println("Solving PolieDRO model...")
         PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
         println("Evaluating PolieDRO model...")
-        ypoliedro = PolieDRO.evaluate_model(model, Xtest_m)
+        ypoliedro = mse_evaluator(model, Xtest_m)
 
         # comparing to MLJ Lasso
         println("Fitting Lasso...")
