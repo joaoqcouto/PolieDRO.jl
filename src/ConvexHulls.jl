@@ -129,12 +129,8 @@ Hulls probabilities function
 Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for the specified loss function.
 
 # Arguments
-- 'X::Matrix{T}': Matrix NxD of points in which the model is trained (N = number of points, D = dimension of points)
-- 'y::Vector{T}': Dependent variable vector relative to the points in the matrix X (size N)
-- 'loss_function::LossFunctions': One of the given loss functions implemented in the enumerator
-    - Default value: hinge_loss (for the Hinge Loss classification model)
-- 'significance_level::Float64': Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
-    - Default value: 0.05
+- 'XHulls::Vector{Vector{Int64}}': Structure of convex hulls as returned by the convex_hulls function
+- 'error::Float64': Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
 
 # Returns
 - List of tuples of the probability intervals associated with each convex hull in the form:
@@ -149,7 +145,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 # Assertions
 - Error must be positive within 0 and 1
 =#
-function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64) where T<:Float64
+function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64)
     @assert error > 0 "Choose a positive error"
     @assert error <= 1 "Choose an error <= 1"
 
