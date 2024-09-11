@@ -46,11 +46,12 @@ Xtest_reg::Matrix{Float64}
 ytest_reg::Vector{Float64}
 
 # building the model
-model_hl = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.hinge_loss)
-model_ll = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.logistic_loss)
+## classification
+model_hl, evaluator_hl = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.hinge_loss)
+model_ll, evaluator_ll = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.logistic_loss)
 
-## for regression problems
-model_mse = PolieDRO.build_model(Xtrain_reg, ytrain_reg, PolieDRO.mse_loss)
+## regression
+model_mse, evaluator_mse = PolieDRO.build_model(Xtrain_reg, ytrain_reg, PolieDRO.mse_loss)
 
 # solving the models
 solve_model!(model_hl, HiGHS.Optimizer)
@@ -59,11 +60,11 @@ solve_model!(model_mse, Ipopt.Optimizer)
 
 # evaluating the test sets
 # classification
-y_hl = evaluate_model(model_hl, Xtest_class)
-y_ll = evaluate_model(model_ll, Xtest_class)
+y_hl = evaluator_hl(model_hl, Xtest_class)
+y_ll = evaluator_ll(model_ll, Xtest_class)
 
 # regression
-y_mse = evaluate_model(model_mse, Xtest_class)
+y_mse = evaluator_mse(model_mse, Xtest_class)
 
 # predictions of the models could then be compared to their expected values in ytest_class and ytest_reg
 ```
@@ -141,15 +142,17 @@ Xtest_m = Matrix{Float64}(Xtest)
 
 The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as hinge loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
 
+Besides the model, the function also returns an evaluator function. It can be used to evaluate points with the optimized model.
+
 ```julia
-model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
+model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
 ```
 
-Now the model can be solved using a linear solver and the test set evaluated:
+Now the model can be solved using a linear solver and the test set evaluated with the evaluator function:
 
 ```julia
 PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
-ytest_eval = PolieDRO.evaluate_model(model, Xtest_m)
+ytest_eval = evaluator(model, Xtest_m)
 ```
 
 As said before, this outputs values relative to the hinge loss function. Below is an evaluation example where we take values above 0 as being classified as '1':
@@ -206,14 +209,14 @@ Xtest_m = Matrix{Float64}(Xtest)
 The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as logistic loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
 
 ```julia
-model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
+model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
 ```
 
 Now the model can be solved using a nonlinear solver and the test set evaluated:
 
 ```julia
 PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
-ytest_eval = PolieDRO.evaluate_model(model, Xtest_m)
+ytest_eval = evaluator(model, Xtest_m)
 ```
 
 This outputs values relative to the logistic loss function, in other words the probability of a point being in the class '1'. Below is an evaluation example where we take values above 0.5 as being classified as '1':
@@ -268,14 +271,14 @@ Xtest_m = Matrix{Float64}(Xtest)
 The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as MSE as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
 
 ```julia
-model = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)
+model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)
 ```
 
 Now the model can be solved using a nonlinear solver and the test set evaluated:
 
 ```julia
 PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
-ytest_eval = PolieDRO.evaluate_model(model, Xtest_m)
+ytest_eval = evaluator(model, Xtest_m)
 ```
 
 Since this is a regression problem, these values can then be directly used as evaluations. Below we calculate the mean squared error in the test set:
@@ -285,6 +288,6 @@ mse_poliedro = mean([(ytest_eval[i] - ytest[i])^2 for i in eachindex(ytest)])
 ```
 For this example, the PolieDRO MSE model achieves a mean squared error of 0.394.
 
-## References 
+## References
 -  GUTIERREZ, T.; VALLADÃO, D. ; PAGNONCELLI, B.. PolieDRO: a novel classification and regression framework with non-parametric data-driven regularization. Machine Learning, 04 2024
 
