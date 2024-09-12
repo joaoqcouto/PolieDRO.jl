@@ -288,6 +288,59 @@ mse_poliedro = mean([(ytest_eval[i] - ytest[i])^2 for i in eachindex(ytest)])
 ```
 For this example, the PolieDRO MSE model achieves a mean squared error of 0.394.
 
+### Custom model
+
+To create a custom model, two functions need to be defined:
+- A convex loss function, which will be used in the general model formulation as $h(W;\beta)$
+    - If the loss function is piecewise linear, it is also possible to use an array of multiple functions, in a way that the loss function will be defined as the maximum of all the given functions. This will avoid making the model nonlinear.
+- A point evaluator function, which will take a given point $x$ and the model's parameters $\beta$ and evaluate $\hat{y}$.
+
+#### Example: MAE model
+
+To use the mean absolute error function in a linear model, it is possible to define two functions instead of one and pass them as an array.
+
+This makes use of the fact that absolute error could be seen as the maximum of positive and negative error, which are both linear.
+
+```julia
+# Positive error
+function pos_error(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
+    return (y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+end
+# Negative error
+function neg_error(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
+    return -(y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+end
+```
+
+Besides that, we need an evaluator function that will use the optimized parameters to evaluate a point $x$.
+
+```julia
+function mae_point_evaluator(x::Vector{T}, β0::T, β1::Vector{T}) where T<:Float64
+    return β0 + β1'x
+end
+```
+
+The model is then built using the training data. Instead of using a predefined model, we pass the loss functions and the evaluator to the model builder function.
+
+```julia
+model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, [pos_error, neg_error], mae_point_evaluator)
+```
+
+Now the model can be solved using a linear solver and the test set evaluated:
+
+```julia
+PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
+ytest_eval = evaluator(model, Xtest_m)
+```
+
+Since this is a regression problem, these values can then be directly used as evaluations. Below we calculate the mean squared error in the test set:
+
+```julia
+mse_poliedro = mean([(ytest_eval[i] - ytest[i])^2 for i in eachindex(ytest)])
+```
+In the automobile dataset, the custom PolieDRO MAE model achieves a mean squared error of 0.220.
+
+
 ## References
 -  GUTIERREZ, T.; VALLADÃO, D. ; PAGNONCELLI, B.. PolieDRO: a novel classification and regression framework with non-parametric data-driven regularization. Machine Learning, 04 2024
 
