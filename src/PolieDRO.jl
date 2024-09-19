@@ -168,9 +168,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Vector{Function}
     @variable(model, η[j in vert_idxs].>=0) # η associated with each vertex (needs to be indexed like so for constraint ct2)
 
     # constraint applied for each hull
-    @constraint(model, ct_loss[i in eachindex(Xhulls)],(sum(η[j] for j in Xhulls[i])-sum([κ[l]-λ[l] for l=1:i]))<=0)
-    # or should be (sum(η)-sum([κ[l]-λ[l] for l=1:i]))<=0
-    # this needs to be double checked
+    @constraint(model, ct_loss[i in eachindex(Xhulls), j in Xhulls[i]], (η[j]-sum([κ[l]-λ[l] for l=1:i]))<=0)
 
     # epigraph above given functions
     @constraint(model, ct_epigraph[f in loss_function, i in eachindex(Xhulls), j in Xhulls[i]], η[j]>=f(X[j,:], y[j], β0, β1))
