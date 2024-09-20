@@ -2,7 +2,7 @@ module ConvexHulls
 
 using JuMP, HiGHS, Distributions
 
-#=
+"""
 Convex hulls function
 
 Calculates the convex hulls associated with the given matrix of points
@@ -30,7 +30,7 @@ Calculates the outer hull, removes the points present in the hulls, calculate th
     ]
 - List of indices which are not vertices
     - The last hull includes its inner points, so some of the points inside it are not vertices of the hull
-=#
+"""
 function convex_hulls(X::Matrix{T}) where T<:Float64
     N, D = size(X)
 
@@ -123,7 +123,7 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
     return hulls_idx_vector, non_vertex_points
 end
 
-#=
+"""
 Hulls probabilities function
 
 Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for the specified loss function.
@@ -144,7 +144,7 @@ Calculates the convex hulls and probabilities associated with the given data and
     
 # Assertions
 - Error must be positive within 0 and 1
-=#
+"""
 function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64)
     @assert error > 0 "Choose a positive error"
     @assert error <= 1 "Choose an error <= 1"
