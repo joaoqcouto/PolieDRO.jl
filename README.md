@@ -6,9 +6,9 @@
 [codecov-img]: https://codecov.io/gh/joaoqcouto/PolieDRO.jl/graph/badge.svg?token=N0OWW35K7J
 [codecov-url]: https://codecov.io/gh/joaoqcouto/PolieDRO.jl
 
-| **Build Status** | **Coverage** |
-|:-----------------:|:-----------------:|
-| [![Build Status][build-img]][build-url] | [![codecov][codecov-img]][codecov-url]|
+| **Build Status** | **Coverage** | **Documentation** |
+|:-----------------:|:-----------------:|:-----------------:|
+| [![Build Status][build-img]][build-url] | [![codecov][codecov-img]][codecov-url] | [![](https://img.shields.io/badge/docs-latest-blue.svg)]( https://joaoqcouto.github.io/PolieDRO.jl/)
 
 PolieDRO is a novel analytics framework for classification and regression that harnesses the power and flexibility of data-driven distributionally robust optimization (DRO) to circumvent the need for regularization hyperparameters.
 
