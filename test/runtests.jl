@@ -1,7 +1,7 @@
 using Test
 using DataFrames
 using Statistics, JuMP, UCIData
-using MLJ, HiGHS, Ipopt, MLJLinearModels, MLJLIBSVMInterface
+using MLJ, Ipopt, MLJLinearModels, MLJLIBSVMInterface
 include("../src/ConvexHulls.jl")
 include("../src/PolieDRO.jl")
 include("../test/dataset_aux.jl")
@@ -111,7 +111,7 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
         # training PolieDRO
         model, hl_evaluator = PolieDRO.build_model(Xtrain_m, ytrain; loss_function=PolieDRO.hinge_loss)
         println("Solving PolieDRO model...")
-        PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
+        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
         println("Evaluating PolieDRO model...")
         ypoliedro = hl_evaluator(model, Xtest_m)
 
