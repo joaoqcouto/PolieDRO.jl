@@ -289,7 +289,7 @@ function solve_model!(model::PolieDROModel, optimizer; silent::Bool=false)
     return
 end
 
-"""
+#=
 About the model evaluator function returned by the build_model methods
 
 Given an optimized PolieDRO model and a matrix of points, evaluate these points in the model and returns the associated dependent variable for each one in a vector.
@@ -304,6 +304,6 @@ Given an optimized PolieDRO model and a matrix of points, evaluate these points 
 
 # Assertions
 - Model must be optimized
-"""
+=#
 
 end # module

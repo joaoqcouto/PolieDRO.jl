@@ -28,9 +28,9 @@ function hypercubes_matrix(N, D)
     return matrix
 end
 
-"""
+#=
 Testing convex hulls creation on hypercubes
-"""
+=#
 @testset "Convex hulls tests" begin
 
     # test for 4 convex hulls made by hypercubes of dimensions 2 up to 10
@@ -61,9 +61,9 @@ Testing convex hulls creation on hypercubes
     end
 end
 
-"""
+#=
 Testing convex hulls probability intervals calculation
-"""
+=#
 @testset "Probabilities test" begin
 
     # test for 2 -> 10 4 dimensional convex hulls
@@ -86,10 +86,10 @@ Testing convex hulls probability intervals calculation
     end
 end
 
-"""
+#=
 Testing on verified datasets
 All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed for the worse
-"""
+=#
 @testset "Hinge Loss classification tests" begin
     # loading model to test against
     @load SVC pkg=LIBSVM
@@ -144,10 +144,10 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
     end
 end
 
-"""
+#=
 Testing on verified datasets
 All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means something changed for the worse
-"""
+=#
 @testset "Logistic loss classification tests" begin
     # testing on some classification datasets
     some_datasets = ["balloons-a", "connectionist-bench", "hayes-roth"]
@@ -200,10 +200,10 @@ All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means somethi
     end
 end
 
-"""
+#=
 Testing on verified datasets
 All have similar PolieDRO and Lasso error, if they fail it means something changed for the worse
-"""
+=#
 @testset "MSE Regression tests" begin
     # testing on some regression datasets
     some_datasets = ["auto-mpg", "housing", "yacht-hydrodynamics"]
