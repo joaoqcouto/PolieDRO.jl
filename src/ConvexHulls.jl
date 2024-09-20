@@ -3,18 +3,20 @@ module ConvexHulls
 using JuMP, HiGHS, Distributions
 
 """
-Convex hulls function
+    convex_hulls(X)
 
 Calculates the convex hulls associated with the given matrix of points
+
 Calculates the outer hull, removes the points present in the hulls, calculate the inner hull, repeat to calculate all hulls
 *Currently does this with a LP model where it tries to create each point with a convex combination of the rest
 *Looking into faster ways of solving this problem, since it is by far the biggest bottleneck
 
 # Arguments
-- 'X::Matrix{T}': Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
+- `X::Matrix{T}`: Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
 
 # Returns
 - List of indices of each hull in the form:
+```
     [
         [
             (index of point 1 in outermost hull),
@@ -28,6 +30,7 @@ Calculates the outer hull, removes the points present in the hulls, calculate th
         ],
         etc.
     ]
+```
 - List of indices which are not vertices
     - The last hull includes its inner points, so some of the points inside it are not vertices of the hull
 """
@@ -124,21 +127,23 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
 end
 
 """
-Hulls probabilities function
+    hulls_probabilities(XHulls, error)
 
 Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for the specified loss function.
 
 # Arguments
-- 'XHulls::Vector{Vector{Int64}}': Structure of convex hulls as returned by the convex_hulls function
-- 'error::Float64': Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
+- `XHulls::Vector{Vector{Int64}}`: Structure of convex hulls as returned by the convex_hulls function
+- `error::Float64`: Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
 
 # Returns
 - List of tuples of the probability intervals associated with each convex hull in the form:
+    ```
     [
         [(lower end of the interval), (upper end of the interval),],            <= interval for outermost hull
         [(lower end of the interval), (upper end of the interval),],            <= interval for inner hull 1
         etc.
     ]
+    ```
     List is the size of the given list of hulls.
     First tuple is always (1,1) because first hull contains all points
     

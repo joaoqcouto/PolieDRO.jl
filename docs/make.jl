@@ -1,16 +1,24 @@
 using Documenter
 using PolieDRO
 
+DocMeta.setdocmeta!(PolieDRO, :DocTestSetup, :(using PolieDRO); recursive = true)
+
 makedocs(;
-    modules=[PolieDRO],
-    repo = Documenter.Remotes.GitHub("joaoqcouto", "PolieDRO.jl"),
-    doctest=true,
-    clean=true,
-    checkdocs=:none,
-    format=Documenter.HTML(mathengine=Documenter.MathJax2()),
-    sitename = "PolieDRO.jl",
-    authors="João Couto",
-    pages=[
-        "Home" => "index.md",
-    ],
+  modules = [PolieDRO],
+  checkdocs = :exports,
+  doctest = true,
+  linkcheck = false, # Rely on Lint.yml/lychee for the links
+  authors = "João Couto",
+  repo = Documenter.Remotes.GitHub("joaoqcouto", "PolieDRO.jl"),
+  sitename = "PolieDRO.jl",
+  format = Documenter.HTML(;
+    prettyurls = true,
+    canonical = "https://joaoqcouto.github.io/PolieDRO.jl",
+  ),
+  pages = [
+    "Home" => "index.md",
+    "Reference" => "reference.md",
+  ],
 )
+
+deploydocs(; repo = "github.com/joaoqcouto/PolieDRO.jl", push_preview = false)
