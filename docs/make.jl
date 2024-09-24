@@ -16,8 +16,9 @@ makedocs(;
     canonical = "https://joaoqcouto.github.io/PolieDRO.jl",
   ),
   pages = [
-    "Home" => "index.md",
-    "Reference" => "reference.md",
+    "Introduction" => "index.md",
+    "Models" => "models.md",
+    "API reference" => "reference.md",
   ],
 )
 

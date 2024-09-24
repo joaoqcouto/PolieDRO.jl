@@ -51,26 +51,26 @@ Build model function (custom loss function version)
 Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for the specified loss function.
 
 # Arguments
-- `X::Matrix{Float64}`: Matrix NxD of points in which the model is trained (N = number of points, D = dimension of points)
-- `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix X (size N)
+- `X::Matrix{Float64}`: Matrix `N x D` of points in which the model is trained (`N` = number of points, `D` = dimension of points)
+- `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix `X` (size `N`)
 - `loss_function::Function`: A loss function to be used in the PolieDRO formulation
     - Has to be convex! (This is not checked)
     - This function defines the solver you will be able to use (for instance, if you use a nonlinear function you will need a nonlinear solver)
-    - Function must have a method f(x::Vector{T}, y::T, β0::T, β1::Vector{T}) where T is Float64
+    - Function must have a method `f(x::Vector{T}, y::T, β0::T, β1::Vector{T})` where `T` is `Float64`
 - `point_evaluator::Function`: A function to evaluate a given point x and the optimized parameters β0, β1
-    - Function must have a method f(x::Vector{T}, β0::T, β1::Vector{T}) where T is Float64
-- `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
-    - Default value: 0.05
+    - Function must have a method `f(x::Vector{T}, β0::T, β1::Vector{T})` where `T` is `Float64`
+- `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
+    - Default value: `0.05`
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
-- An evaluator function, which takes the solved model and a matrix of points X and evaluates them
+- An evaluator function, which takes the solved model and a matrix of points `X` and evaluates them
 
 # Assertions
-- X and Y must match in sizes (NxD and N)
-- N must be larger than D (no high dimensional problems)
-- No infinite or NaN values in either X or y
-- No duplicate points in X
+- `X` and `y` must match in sizes (`N x D` and `N`)
+- `N` must be larger than `D` (no high dimensional problems)
+- No `Infinite` or `NaN` values in either `X` or `y`
+- No duplicate points in `X`
 """
 function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_evaluator::Function; significance_level::Float64=0.05) where T<:Float64
     N, D = size(X)
@@ -131,27 +131,27 @@ Calculates the convex hulls and probabilities associated with the given data and
 The loss function in this case is a maximum of a group of functions, modeled as an epigraph. This is used, for instance, in the hinge loss function.
 
 # Arguments
-- `X::Matrix{Float64}`: Matrix NxD of points in which the model is trained (N = number of points, D = dimension of points)
-- `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix X (size N)
+- `X::Matrix{Float64}`: Matrix NxD of points in which the model is trained (`N` = number of points, `D` = dimension of points)
+- `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix `X` (size `N`)
 - `loss_function::Vector{Function}`: A list of functions to be used in the PolieDRO formulation, the loss function will be an epigraph above all those
     - They have to be convex! (This is not checked)
     - These functions defines the solver you will be able to use (for instance, if you use a nonlinear function you will need a nonlinear solver)
-    - Functions must have a method f(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T is Float64
+    - Functions must have a method `f(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef})` where `T` is `Float64`
     - This method allows you to use multiple linear functions instead of a piecewise linear one and use a linear solver
-- `point_evaluator::Function`: A function to evaluate a given point x and the optimized parameters β0, β1
-    - Function must have a method f(x::Vector{T}, β0::T, β1::Vector{T}) where T is Float64
-- `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
-    - Default value: 0.05
+- `point_evaluator::Function`: A function to evaluate a given point `x` and the optimized parameters β0, β1
+    - Function must have a method `f(x::Vector{T}, β0::T, β1::Vector{T})` where `T` is `Float64`
+- `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
+    - Default value: `0.05`
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
-- An evaluator function, which takes the solved model and a matrix of points X and evaluates them
+- An evaluator function, which takes the solved model and a matrix of points `X` and evaluates them
 
 # Assertions
-- X and Y must match in sizes (NxD and N)
-- N must be larger than D (no high dimensional problems)
-- No infinite or NaN values in either X or y
-- No duplicate points in X
+- `X` and `y` must match in sizes (`N x D` and `N`)
+- `N` must be larger than `D` (no high dimensional problems)
+- No `Infinite` or `NaN` values in either `X` or `y`
+- No duplicate points in `X`
 """
 function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function}, point_evaluator::Function; significance_level::Float64=0.05) where T<:Float64
     N, D = size(X)
@@ -217,22 +217,22 @@ Build model function (pre-implemented loss functions)
 Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for a pre-implemented loss function.
 
 # Arguments
-- `X::Matrix{Float64}`: Matrix NxD of points in which the model is trained (N = number of points, D = dimension of points)
-- `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix X (size N)
+- `X::Matrix{Float64}`: Matrix `N x D` of points in which the model is trained (`N` = number of points, `D` = dimension of points)
+- `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix `X` (size `N`)
 - `loss_function::LossFunctions`: One of the given loss functions implemented in the enumerator
-    - Default value: hinge_loss (for the Hinge Loss classification model)
-- `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls (read more in the README.md)
-    - Default value: 0.05
+    - Default value: `hinge_loss` (for the Hinge Loss classification model)
+- `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
+    - Default value: `0.05`
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
-- An evaluator function, which takes the solved model and a matrix of points X and evaluates them
+- An evaluator function, which takes the solved model and a matrix of points `X` and evaluates them
 
 # Assertions
-- X and Y must match in sizes (NxD and N)
-- N must be larger than D (no high dimensional problems)
-- No infinite or NaN values in either X or y
-- No duplicate points in X
+- `X` and `y` must match in sizes (`N x D` and `N`)
+- `N` must be larger than `D` (no high dimensional problems)
+- No `Infinite` or `NaN` values in either `X` or `y`
+- No duplicate points in `X`
 - For classification models (hinge and logistic loss) all values in y must be either 1 or -1
 """
 function build_model(X::Matrix{T}, y::Vector{T}; loss_function::LossFunctions=hinge_loss, significance_level::Float64=0.05) where T<:Float64
@@ -293,14 +293,14 @@ end
 Solve model function
 
 Uses the given solver to solve the PolieDRO model.
-Modifies the struct with the results and sets the 'optimized' bool in it to true
+Modifies the struct with the results and sets the `optimized` bool in it to true
 
 # Arguments
 - `model::PolieDROModel`: A PolieDRO model struct, as given by the build_model function, to be solved
 - `optimizer`: An optimizer as the ones used to solve JuMP models
     - NOTE: For the logistic and MSE models, a nonlinear solver is necessary
 - `silent::Bool`: Sets the flag to solve the model silently (without logs)
-    - Default value: false
+    - Default value: `false`
 """
 function solve_model!(model::PolieDROModel, optimizer; silent::Bool=false)
     set_optimizer(model.model, optimizer)

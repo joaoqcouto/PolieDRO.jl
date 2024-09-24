@@ -1,5 +1,7 @@
 # Reference
 
+Full description of the functions implemented in PolieDRO.jl.
+
 ## Contents
 
 ```@contents
