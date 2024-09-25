@@ -12,15 +12,23 @@ To calculate the confidence intervals for the hulls' associated probabilities, a
 
 With the information of the vertices' convex hulls and their associated probabilities, it is then possible to construct the DRO problem developed in the framework as seen below for a given convex loss function $h(W;\beta)$:
 
-$$\min_{\beta, \lambda,\kappa} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i})$$
+```math
+\begin{align}
 
-$$\text{s.t.} \quad h(W;\beta) - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F$$
+& \min_{\beta, \lambda,\kappa} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i}) \\
 
-$$\lambda_i \geq 0, \forall i \in F$$
+& \text{s.t.} \\
 
-$$\kappa_i \geq 0, \forall i \in F$$
+& h(W;\beta) - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F \\
 
-$$\beta \in B$$
+& \lambda_i \geq 0, \forall i \in F \\
+
+& \kappa_i \geq 0, \forall i \in F \\
+
+& \beta \in B
+
+\end{align}
+```
 
 Where $F$ is the set of convex hulls of the observations, $V_i$ is the set of vertices present in each convex hull $i \in F$ and $\underline{p_i}$, $\overline{p_i}$ are the confidence intervals for each hull's coverage probability.
 
@@ -30,17 +38,23 @@ With this in hand, three loss functions used in common machine learning methods 
 
 The hinge loss function is a margin-based loss function commonly used in classification tasks with the support vector machine (SVM). It linearly penalizes a misclassification of an observation. Below is the formulation of the PolieDRO problem with the use of the hinge loss function as $h(W;\beta)$:
 
-$$\min_{\beta, \lambda,\kappa, \eta} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i})$$
+```math
+\begin{align}
+& \min_{\beta, \lambda,\kappa, \eta} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i}) \\
 
-$$\text{s.t.} \quad \eta_j - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F$$
+& \text{s.t.} \\
 
-$$\eta_j \geq 1 - y_j(\beta_1^Tx_j - \beta_0), \forall j \in V_i, i \in F$$
+& \eta_j - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F \\
 
-$$\eta_j \geq 0, \forall j \in V_i, i \in F$$
+& \eta_j \geq 1 - y_j(\beta_1^Tx_j - \beta_0), \forall j \in V_i, i \in F \\
 
-$$\lambda_i \geq 0, \forall i \in F$$
+& \eta_j \geq 0, \forall j \in V_i, i \in F \\
 
-$$\kappa_i \geq 0, \forall i \in F$$
+& \lambda_i \geq 0, \forall i \in F \\
+
+& \kappa_i \geq 0, \forall i \in F
+\end{align}
+```
 
 Having solved the problem, we have in hand the parameters $\beta$. It is then possible to evaluate a given point $x$ as below:
 
@@ -100,13 +114,19 @@ For this example, the PolieDRO Hinge Loss model achieves an accuracy of 85.1%.
 
 The logistic loss is used to estimate the probability of a data point being in a certain category. In a binary setting, data points classified as '1' are expected to have a probability evaluated near 1 while data points classified as '-1' are expected to have a probability near zero. Using this loss function as $h(W;\beta)$ we arrive in the formulation below:
 
-$$\min_{\beta, \lambda,\kappa} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i})$$
+```math
+\begin{align}
+& \min_{\beta, \lambda,\kappa} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i}) \\
 
-$$\text{s.t.} \quad \log(1+e^{-y_j(\beta_0 + \beta_1^Tx_j)}) - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F$$
+& \text{s.t.} \\
 
-$$\lambda_i \geq 0, \forall i \in F$$
+& \log(1+e^{-y_j(\beta_0 + \beta_1^Tx_j)}) - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F \\
 
-$$\kappa_i \geq 0, \forall i \in F$$
+& \lambda_i \geq 0, \forall i \in F \\
+
+& \kappa_i \geq 0, \forall i \in F
+\end{align}
+```
 
 The parameters $\beta$ can be used to evaluate a given point $x$ as below:
 
@@ -164,13 +184,19 @@ For this example, the PolieDRO Logistic Loss model achieves an accuracy of 83.0%
 
 The mean squared error (MSE) is a distance-based error metric commonly seen in linear regression models, such as the LASSO regression. Using it in the PolieDRO framework, the formulation we arrive at is:
 
-$$\min_{\beta, \lambda,\kappa} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i})$$
+```math
+\begin{align}
+& \min_{\beta, \lambda,\kappa} \sum_{i \in F} (\kappa_i \overline{p_i} - \lambda_i \underline{p_i}) \\
 
-$$\text{s.t.} \quad (y_j - (\beta_0 + \beta_1^Tx_j))^2 - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F$$
+& \text{s.t.} \\
 
-$$\lambda_i \geq 0, \forall i \in F$$
+& (y_j - (\beta_0 + \beta_1^Tx_j))^2 - \sum_{l \in A(i)} (\kappa_l - \lambda_l) \leq 0, \quad \forall j \in V_i, \forall i \in F \\
 
-$$\kappa_i \geq 0, \forall i \in F$$
+& \lambda_i \geq 0, \forall i \in F \\
+
+& \kappa_i \geq 0, \forall i \in F
+\end{align}
+```
 
 A point $x$ can then be evaluated as below:
 

@@ -7,7 +7,7 @@ makedocs(;
   modules = [PolieDRO],
   checkdocs = :exports,
   doctest = true,
-  linkcheck = false, # Rely on Lint.yml/lychee for the links
+  linkcheck = false,
   authors = "João Couto",
   repo = Documenter.Remotes.GitHub("joaoqcouto", "PolieDRO.jl"),
   sitename = "PolieDRO.jl",
