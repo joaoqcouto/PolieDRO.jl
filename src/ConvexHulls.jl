@@ -171,8 +171,7 @@ function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64)
     intervals = []
 
     confidence_interval = 1 - error/2
-    z = quantile(Normal(0.0, 1.0),confidence_interval)
-    q = z/sqrt(n_points)
+    q = quantile(Normal(0.0, 1.0),confidence_interval)
 
     for i in eachindex(probabilities)
         p = probabilities[i]

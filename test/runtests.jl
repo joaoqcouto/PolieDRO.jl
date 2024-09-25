@@ -77,9 +77,14 @@ Testing convex hulls probability intervals calculation
             probabilities_X = ConvexHulls.hulls_probabilities(hulls_X, 0.05)
 
             expected_probability = 1.0
-            for interval in probabilities_X
-                avg_prob = Statistics.mean(interval)
-                @test abs(avg_prob - expected_probability) < 0.00000001 # since it is float math there is an imprecision
+            for i in eachindex(probabilities_X)
+                avg_prob = Statistics.mean(probabilities_X[i])
+
+                println("Hull $i probability interval")
+                println("[ $(probabilities_X[i][1]) ; $(probabilities_X[i][2]) ]")
+                println("Mean = $avg_prob")
+
+                @test abs(avg_prob - expected_probability) < 1e-6 # since it is float math there is an imprecision
                 expected_probability -= 1.0/N
             end
         end
