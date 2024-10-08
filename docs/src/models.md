@@ -64,13 +64,11 @@ This output is based on the hinge loss function, meaning a value above zero indi
 
 ### Usage in PolieDRO.jl
 
-To use the Hinge Loss PolieDRO model in a classification problem, a linear solver for JuMP is needed. The example below is using [HiGHS](https://github.com/jump-dev/HiGHS.jl), an open-source linear optimization solver.
-
 To load an example dataset, the package [UCIData.jl](https://github.com/JackDunnNZ/UCIData.jl) is used to load it directly in Julia as a Dataframe. This classification example uses [thoracic surgery data](https://archive.ics.uci.edu/dataset/277/thoracic+surgery+data).
 
 ```julia
 using PolieDRO
-using UCIData, HiGHS
+using UCIData
 
 df = UCIData.dataset("thoracic-surgery")
 ```
@@ -95,10 +93,10 @@ Besides the model, the function also returns a predictor function. It can be use
 model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
 ```
 
-Now the model can be solved using a linear solver and the test set evaluated with the predictor function:
+Now the model can be solved and the test set evaluated with the predictor function:
 
 ```julia
-PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
+PolieDRO.solve_model!(model)
 ytest_eval = predictor(model, Xtest_m)
 ```
 
@@ -136,13 +134,11 @@ As said above, this logistic loss output is near 1 when a point is classified as
 
 ### Usage in PolieDRO.jl
 
-To use the Logistic Loss PolieDRO model in a classification problem, a nonlinear solver for JuMP is needed. The example below is using [Ipopt](https://github.com/jump-dev/Ipopt.jl), an open-source nonlinear optimization solver.
-
 To load an example dataset, the package [UCIData.jl](https://github.com/JackDunnNZ/UCIData.jl) is used to load it directly in Julia as a Dataframe. This classification example uses [thoracic surgery data](https://archive.ics.uci.edu/dataset/277/thoracic+surgery+data).
 
 ```julia
 using PolieDRO
-using UCIData, Ipopt
+using UCIData
 
 df = UCIData.dataset("thoracic-surgery")
 ```
@@ -165,10 +161,10 @@ The model is then built using the training data. It is during this time that the
 model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
 ```
 
-Now the model can be solved using a nonlinear solver and the test set evaluated:
+Now the model can be solved and the test set evaluated:
 
 ```julia
-PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+PolieDRO.solve_model!(model)
 ytest_eval = predictor(model, Xtest_m)
 ```
 
@@ -204,13 +200,11 @@ $$\hat{y} = \beta_0 + \beta_1^Tx$$
 
 ### Usage in PolieDRO.jl
 
-To use the MSE PolieDRO model in a regression problem, a nonlinear solver for JuMP is needed. The example below is using [Ipopt](https://github.com/jump-dev/Ipopt.jl), an open-source nonlinear optimization solver.
-
 To load an example dataset, the package [UCIData.jl](https://github.com/JackDunnNZ/UCIData.jl) is used to load it directly in Julia as a Dataframe. This regression example uses [automobile data](https://archive.ics.uci.edu/dataset/10/automobile).
 
 ```julia
 using PolieDRO
-using UCIData, Ipopt
+using UCIData
 
 df = UCIData.dataset("automobile")
 ```
@@ -233,10 +227,10 @@ The model is then built using the training data. It is during this time that the
 model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)
 ```
 
-Now the model can be solved using a nonlinear solver and the test set evaluated:
+Now the model can be solved and the test set evaluated:
 
 ```julia
-PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+PolieDRO.solve_model!(model)
 ytest_eval = predictor(model, Xtest_m)
 ```
 
@@ -289,10 +283,10 @@ The model is then built using the training data. Instead of using a predefined m
 model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, [pos_error, neg_error], mae_point_evaluator)
 ```
 
-Now the model can be solved using a linear solver and the test set evaluated:
+Now the model can be solved and the test set evaluated:
 
 ```julia
-PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
+PolieDRO.solve_model!(model)
 ytest_eval = predictor(model, Xtest_m)
 ```
 

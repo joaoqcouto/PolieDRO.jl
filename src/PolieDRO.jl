@@ -1,6 +1,7 @@
 module PolieDRO
 
-using JuMP
+# dependencies
+using JuMP, Ipopt
 
 # convex hulls module
 include("ConvexHulls.jl")

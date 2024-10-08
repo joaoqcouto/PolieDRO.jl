@@ -19,10 +19,6 @@ import Pkg
 Pkg.add(url = "https://github.com/joaoqcouto/PolieDRO.jl")
 using PolieDRO
 
-# Ipopt as an example of nonlinear solver
-# HiGHS as example of linear solver
-using Ipopt, HiGHS
-
 ## split some dataset into train and test sets
 ## one classification and one regression dataset as examples
 ## for classification problems y values are all either 1 or -1
@@ -48,9 +44,9 @@ model_ll, predictor_ll = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieD
 model_mse, predictor_mse = PolieDRO.build_model(Xtrain_reg, ytrain_reg, PolieDRO.mse_loss)
 
 # solving the models
-solve_model!(model_hl, HiGHS.Optimizer)
-solve_model!(model_ll, Ipopt.Optimizer)
-solve_model!(model_mse, Ipopt.Optimizer)
+solve_model!(model_hl)
+solve_model!(model_ll)
+solve_model!(model_mse)
 
 # predicting the test sets
 # classification

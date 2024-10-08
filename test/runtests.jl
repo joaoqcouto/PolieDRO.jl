@@ -1,7 +1,7 @@
 using Test
 using DataFrames
 using Statistics, JuMP, UCIData
-using MLJ, Ipopt, MLJLinearModels, MLJLIBSVMInterface
+using MLJ, MLJLinearModels, MLJLIBSVMInterface
 using PolieDRO
 include("../test/dataset_aux.jl")
 
@@ -124,7 +124,7 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
         # training PolieDRO
         model, hl_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
         println("Solving PolieDRO model...")
-        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        PolieDRO.solve_model!(model)
         println("Evaluating PolieDRO model...")
         ypoliedro = hl_evaluator(model, Xtest_m)
 
@@ -179,7 +179,7 @@ All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means somethi
         # training PolieDRO
         model, ll_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
         println("Solving PolieDRO model...")
-        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        PolieDRO.solve_model!(model)
         println("Evaluating PolieDRO model...")
         ypoliedro = ll_evaluator(model, Xtest_m)
 
@@ -237,14 +237,14 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
         println("Building PolieDRO MSE model...")
         model, mse_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss; hulls=data_hulls)
         println("Solving PolieDRO MSE model...")
-        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        PolieDRO.solve_model!(model)
         println("Evaluating PolieDRO MSE model...")
         ypoliedro_mse = mse_evaluator(model, Xtest_m)
 
         println("Building PolieDRO MAE model...")
         model, mae_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mae_loss; hulls=data_hulls)
         println("Solving PolieDRO MAE model...")
-        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        PolieDRO.solve_model!(model)
         println("Evaluating PolieDRO MAE model...")
         ypoliedro_mae = mae_evaluator(model, Xtest_m)
 
