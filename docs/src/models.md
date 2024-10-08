@@ -89,20 +89,20 @@ Xtest_m = Matrix{Float64}(Xtest)
 
 The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as hinge loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
 
-Besides the model, the function also returns an evaluator function. It can be used to evaluate points with the optimized model.
+Besides the model, the function also returns a predictor function. It can be used to predict points with the optimized model.
 
 ```julia
-model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
+model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
 ```
 
-Now the model can be solved using a linear solver and the test set evaluated with the evaluator function:
+Now the model can be solved using a linear solver and the test set evaluated with the predictor function:
 
 ```julia
 PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
-ytest_eval = evaluator(model, Xtest_m)
+ytest_eval = predictor(model, Xtest_m)
 ```
 
-As said before, this outputs values relative to the hinge loss function. Below is an evaluation example where we take values above 0 as being classified as '1':
+As said before, this outputs values relative to the hinge loss function. Below is an prediction example where we take values above 0 as being classified as '1':
 
 ```julia
 ytest_eval_abs = [yp >= 0.0 ? 1.0 : -1.0 for yp in ytest_eval]
@@ -128,7 +128,7 @@ The logistic loss is used to estimate the probability of a data point being in a
 \end{align}
 ```
 
-The parameters $\beta$ can be used to evaluate a given point $x$ as below:
+The parameters $\beta$ can be used to predict a given point $x$ as below:
 
 $$\hat{y} = \frac{e^{\beta_0 + \beta_1^Tx}}{1+e^{\beta_0 + \beta_1^Tx}}$$
 
@@ -162,17 +162,17 @@ Xtest_m = Matrix{Float64}(Xtest)
 The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as logistic loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
 
 ```julia
-model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
+model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
 ```
 
 Now the model can be solved using a nonlinear solver and the test set evaluated:
 
 ```julia
 PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
-ytest_eval = evaluator(model, Xtest_m)
+ytest_eval = predictor(model, Xtest_m)
 ```
 
-This outputs values relative to the logistic loss function, in other words the probability of a point being in the class '1'. Below is an evaluation example where we take values above 0.5 as being classified as '1':
+This outputs values relative to the logistic loss function, in other words the probability of a point being in the class '1'. Below is a prediction example where we take values above 0.5 as being classified as '1':
 
 ```julia
 ytest_eval_abs = [yp >= 0.5 ? 1.0 : -1.0 for yp in ytest_eval]
@@ -198,7 +198,7 @@ The mean squared error (MSE) is a distance-based error metric commonly seen in l
 \end{align}
 ```
 
-A point $x$ can then be evaluated as below:
+A point $x$ can then be predicted as below:
 
 $$\hat{y} = \beta_0 + \beta_1^Tx$$
 
@@ -230,17 +230,17 @@ Xtest_m = Matrix{Float64}(Xtest)
 The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as MSE as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
 
 ```julia
-model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)
+model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)
 ```
 
 Now the model can be solved using a nonlinear solver and the test set evaluated:
 
 ```julia
 PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
-ytest_eval = evaluator(model, Xtest_m)
+ytest_eval = predictor(model, Xtest_m)
 ```
 
-Since this is a regression problem, these values can then be directly used as evaluations. Below we calculate the mean squared error in the test set:
+Since this is a regression problem, these values can then be directly used as predictions. Below we calculate the mean squared error in the test set:
 
 ```julia
 mse_poliedro = mean([(ytest_eval[i] - ytest[i])^2 for i in eachindex(ytest)])
@@ -281,20 +281,20 @@ function mae_point_evaluator(x::Vector{T}, β0::T, β1::Vector{T}) where T<:Floa
 end
 ```
 
-The model is then built using the training data. Instead of using a predefined model, we pass the loss functions and the evaluator to the model builder function.
+The model is then built using the training data. Instead of using a predefined model, we pass the loss functions and the point evaluator to the model builder function.
 
 ```julia
-model, evaluator = PolieDRO.build_model(Xtrain_m, ytrain, [pos_error, neg_error], mae_point_evaluator)
+model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, [pos_error, neg_error], mae_point_evaluator)
 ```
 
 Now the model can be solved using a linear solver and the test set evaluated:
 
 ```julia
 PolieDRO.solve_model!(model, HiGHS.Optimizer; silent=true)
-ytest_eval = evaluator(model, Xtest_m)
+ytest_eval = predictor(model, Xtest_m)
 ```
 
-Since this is a regression problem, these values can then be directly used as evaluations. Below we calculate the mean squared error in the test set:
+Since this is a regression problem, these values can then be directly used as predictions. Below we calculate the mean squared error in the test set:
 
 ```julia
 mse_poliedro = mean([(ytest_eval[i] - ytest[i])^2 for i in eachindex(ytest)])

@@ -41,26 +41,26 @@ ytest_reg::Vector{Float64}
 
 # building the model
 ## classification
-model_hl, evaluator_hl = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.hinge_loss)
-model_ll, evaluator_ll = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.logistic_loss)
+model_hl, predictor_hl = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.hinge_loss)
+model_ll, predictor_ll = PolieDRO.build_model(Xtrain_class, ytrain_class, PolieDRO.logistic_loss)
 
 ## regression
-model_mse, evaluator_mse = PolieDRO.build_model(Xtrain_reg, ytrain_reg, PolieDRO.mse_loss)
+model_mse, predictor_mse = PolieDRO.build_model(Xtrain_reg, ytrain_reg, PolieDRO.mse_loss)
 
 # solving the models
 solve_model!(model_hl, HiGHS.Optimizer)
 solve_model!(model_ll, Ipopt.Optimizer)
 solve_model!(model_mse, Ipopt.Optimizer)
 
-# evaluating the test sets
+# predicting the test sets
 # classification
-y_hl = evaluator_hl(model_hl, Xtest_class)
-y_ll = evaluator_ll(model_ll, Xtest_class)
+y_hl = predictor_hl(model_hl, Xtest_class)
+y_ll = predictor_ll(model_ll, Xtest_class)
 
 # regression
-y_mse = evaluator_mse(model_mse, Xtest_class)
+y_mse = predictor_mse(model_mse, Xtest_class)
 
-# predictions of the models could then be compared to their expected values in ytest_class and ytest_reg
+# predictions of the models could then be compared to their correct values in ytest_class and ytest_reg
 ```
 
 ## References

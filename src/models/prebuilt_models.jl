@@ -16,7 +16,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
-- An evaluator function, which takes the solved model and a matrix of points `X` and evaluates them
+- A predictor function, which takes the solved model and a matrix of points `X` and predicts their `y`
 
 # Assertions
 - `X` and `y` must match in sizes (`N x D` and `N`)

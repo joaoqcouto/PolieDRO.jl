@@ -45,7 +45,7 @@ Optionals
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
-- An evaluator function, which takes the solved model and a matrix of points `X` and evaluates them
+- A predictor function, which takes the solved model and a matrix of points `X` and predicts their `y`
 
 # Assertions
 - `X` and `y` must match in sizes (`N x D` and `N`)
@@ -104,14 +104,14 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_
     # add loss function constraint
     @constraint(model, ct_loss[i in eachindex(Xhulls), j in Xhulls[i]], (loss_function(X[j,:], y[j], β0, β1) - sum([κ[l]-λ[l] for l=1:i]))<=0)
 
-    # create model evaluator function
+    # create model predictor function
     "$evaluator_docstring"
-    function evaluator(model_struct::PolieDROModel, Xeval::Matrix{T}) where T<:Float64
+    function predictor(model_struct::PolieDROModel, Xeval::Matrix{T}) where T<:Float64
         @assert model_struct.optimized "Model has not been optimized"
         return [point_evaluator(Xeval[i,:], model_struct.β0, model_struct.β1) for i=axes(Xeval,1)]
     end
 
-    return PolieDROModel(model, -Inf64, [], false), evaluator
+    return PolieDROModel(model, -Inf64, [], false), predictor
 end
 
 
@@ -147,7 +147,7 @@ Optionals
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
-- An evaluator function, which takes the solved model and a matrix of points `X` and evaluates them
+- A predictor function, which takes the solved model and a matrix of points `X` and predicts their `y`
 
 # Assertions
 - `X` and `y` must match in sizes (`N x D` and `N`)
@@ -213,13 +213,13 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function
     # epigraph above given functions
     @constraint(model, ct_epigraph[f in loss_functions, i in eachindex(Xhulls), j in Xhulls[i]], η[j]>=f(X[j,:], y[j], β0, β1))
 
-    # create model evaluator function
+    # create model forecaster function
     "$evaluator_docstring"
-    function evaluator(model_struct::PolieDROModel, Xeval::Matrix{T}) where T<:Float64
+    function predictor(model_struct::PolieDROModel, Xeval::Matrix{T}) where T<:Float64
         @assert model_struct.optimized "Model has not been optimized"
         return [point_evaluator(Xeval[i,:], model_struct.β0, model_struct.β1) for i=axes(Xeval,1)]
     end
 
-    return PolieDROModel(model, -Inf64, [], false), evaluator
+    return PolieDROModel(model, -Inf64, [], false), predictor
 end
 
