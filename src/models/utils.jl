@@ -1,8 +1,3 @@
-# Enum to store the implemented loss function values
-# Each one is explained in more detail in the README.md file
-@enum LossFunctions hinge_loss logistic_loss mse_loss
-
-
 # docstring for returned evaluator functions
 evaluator_docstring = """
 Model evaluator function

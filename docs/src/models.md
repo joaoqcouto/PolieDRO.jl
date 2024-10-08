@@ -262,6 +262,8 @@ To use the MAE function in a linear model, it is possible to define two function
 
 This makes use of the fact that absolute error could be seen as the maximum of positive and negative error, which are both linear. The use of two linear functions instead of a piecewise linear one allows for the use of linear solvers.
 
+*NOTE: The MAE model is already implemented and can be used in the same way of the MSE model, but using `PolieDRO.mae_loss`. The implementation seen here is the exact implementation inside the model source code.
+
 ```julia
 # Positive error
 function pos_error(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64

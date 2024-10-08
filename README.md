@@ -14,9 +14,10 @@ PolieDRO is a novel analytics framework for classification and regression that h
 
 ## Features
 * Build, solve and evaluate models in the PolieDRO framework using 3 implemented loss functions
-  * Hinge loss: classification model based on the support vector machine (SVM)
-  * Logistic loss: classification model based on the logistic regressor
-  * Mean squared error: regression model based on the LASSO regressor
+  * Hinge loss: for classification models, used on the support vector machine (SVM)
+  * Logistic loss: for classification models, used on the logistic regressor
+  * Mean squared error: for regression models, used on the LASSO regressor
+  * Mean absolute error: for regression models, using the MAE instead of MSE
 * Create your own model by implementing custom loss functions in the PolieDRO framework
 
 ## Quickstart

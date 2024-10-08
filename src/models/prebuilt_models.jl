@@ -1,4 +1,8 @@
-export build_model
+export build_model, LossFunctions
+
+# Enum to store the implemented loss function values
+# Each one is explained in more detail in the README.md file
+@enum LossFunctions hinge_loss logistic_loss mse_loss mae_loss
 
 """
     build_model(X, y, loss_function, point_evaluator; significance_level=0.05)
@@ -59,7 +63,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
             return exp(β0 + β1'x)/(1+exp(β0 + β1'x))
         end
 
-        return build_model(X, y, ll_function, ll_point_evaluator; significance_level=significance_level)
+        return build_model(X, y, ll_function, ll_point_evaluator; hulls=hulls, significance_level=significance_level)
 
     elseif (loss_function == mse_loss)
         # mse loss function
@@ -72,7 +76,24 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
             return β0 + β1'x
         end
 
-        return build_model(X, y, mse_function, mse_point_evaluator; significance_level=significance_level)
+        return build_model(X, y, mse_function, mse_point_evaluator; hulls=hulls, significance_level=significance_level)
+
+    elseif (loss_function == mae_loss)
+        # mae loss epigraph define as above these two
+        function mae_1(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
+            return (y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+        end
+        function mae_2(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
+            return -(y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+        end
+
+        # mae evaluator
+        function mae_point_evaluator(x::Vector{T}, β0::T, β1::Vector{T}) where T<:Float64
+            return β0 + β1'x
+        end
+
+        return build_model(X, y, [mae_1, mae_2], mae_point_evaluator; hulls=hulls, significance_level=significance_level)
+
     end
 
     # how did you get here

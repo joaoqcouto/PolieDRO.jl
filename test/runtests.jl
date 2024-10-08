@@ -215,17 +215,6 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
     # testing on some regression datasets
     some_datasets = ["auto-mpg", "housing", "yacht-hydrodynamics"]
 
-    # MAE implementation functions
-    function mae_function_1(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
-        return (y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
-    end
-    function mae_function_2(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
-        return -(y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
-    end
-    function mae_point_evaluator(x::Vector{T}, β0::T, β1::Vector{T}) where T<:Float64
-        return β0 + β1'x
-    end
-
     for dataset in some_datasets
         println("===================")
         println("$(dataset) dataset test")
@@ -253,7 +242,7 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
         ypoliedro_mse = mse_evaluator(model, Xtest_m)
 
         println("Building PolieDRO MAE model...")
-        model, mae_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, [mae_function_1, mae_function_2], mae_point_evaluator; hulls=data_hulls)
+        model, mae_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mae_loss; hulls=data_hulls)
         println("Solving PolieDRO MAE model...")
         PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
         println("Evaluating PolieDRO MAE model...")
