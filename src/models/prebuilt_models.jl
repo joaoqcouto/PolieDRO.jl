@@ -11,7 +11,6 @@ Calculates the convex hulls and probabilities associated with the given data and
 - `X::Matrix{Float64}`: Matrix `N x D` of points in which the model is trained (`N` = number of points, `D` = dimension of points)
 - `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix `X` (size `N`)
 - `loss_function::LossFunctions`: One of the given loss functions implemented in the enumerator
-    - Default value: `hinge_loss` (for the Hinge Loss classification model)
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
     - Default value: `0.05`
 
@@ -26,7 +25,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 - No duplicate points in `X`
 - For classification models (hinge and logistic loss) all values in y must be either 1 or -1
 """
-function build_model(X::Matrix{T}, y::Vector{T}; loss_function::LossFunctions=hinge_loss, significance_level::Float64=0.05) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05) where T<:Float64
     if (loss_function == hinge_loss)
         # classification problem: y values are all either 1 or -1
         @assert all([y[i] == 1 || y[i] == -1 for i in eachindex(y)]) "There is a value in y other than 1 or -1"
@@ -44,7 +43,7 @@ function build_model(X::Matrix{T}, y::Vector{T}; loss_function::LossFunctions=hi
             return β1'x - β0
         end
 
-        return build_model(X, y, [hl_1, hl_2], hl_point_evaluator; significance_level=significance_level)
+        return build_model(X, y, [hl_1, hl_2], hl_point_evaluator; hulls=hulls, significance_level=significance_level)
 
     elseif (loss_function == logistic_loss)
         # classification problem: y values are all either 1 or -1

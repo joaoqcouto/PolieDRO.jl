@@ -1,5 +1,5 @@
 """
-    hulls_probabilities(XHulls, error)
+    calculate_hulls_probabilities(XHulls, error)
 
 Calculates the convex hulls and probabilities associated with the given data and builds the PolieDRO model for the specified loss function.
 
@@ -22,9 +22,11 @@ Calculates the convex hulls and probabilities associated with the given data and
 # Assertions
 - Error must be positive within 0 and 1
 """
-function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64)
+function calculate_hulls_probabilities(hulls_struct::HullsInfo, error::Float64)
     @assert error > 0 "Choose a positive error"
     @assert error <= 1 "Choose an error <= 1"
+
+    XHulls = hulls_struct.index_sets
 
     # vector of probabilities (center of each interval)
     probabilities = []
@@ -52,5 +54,8 @@ function hulls_probabilities(XHulls::Vector{Vector{Int64}}, error::Float64)
         push!(intervals, [p_lower, p_upper])
     end
 
-    return intervals
+    hulls_struct.significance_level = error
+    hulls_struct.probabilities = intervals
+
+    return
 end

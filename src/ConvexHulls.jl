@@ -1,5 +1,3 @@
-module ConvexHulls
-
 # dependencies
 using JuMP, HiGHS, Distributions
 
@@ -8,5 +6,3 @@ include("hulls/hulls-calculation.jl")
 
 # calculating associated probabilities
 include("hulls/hulls-probabilities.jl")
-
-end # module

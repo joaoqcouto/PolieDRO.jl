@@ -1,17 +1,13 @@
+export calculate_convex_hulls
+
 """
-    convex_hulls(X)
+Convex hulls and probabilities structure
 
-Calculates the convex hulls associated with the given matrix of points
+Stores information about the convex hulls that can be reused for separate PolieDRO models being trained in the same dataset
+Not having to recalculate convex hulls drastically reduces model training time
 
-Calculates the outer hull, removes the points present in the hulls, calculate the inner hull, repeat to calculate all hulls
-*Currently does this with a LP model where it tries to create each point with a convex combination of the rest
-*Looking into faster ways of solving this problem, since it is by far the biggest bottleneck
-
-# Arguments
-- `X::Matrix{T}`: Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
-
-# Returns
-- List of indices of each hull in the form:
+# Fields
+- `index_sets::Vector{Vector{Int64}}`: List of indices of each hull in the form:
 ```
     [
         [
@@ -24,13 +20,51 @@ Calculates the outer hull, removes the points present in the hulls, calculate th
             (index of point 2 in inner hull 1),
             etc.
         ],
-        etc.
+        (one entry per convex hull)
     ]
 ```
-- List of indices which are not vertices
+- `index_sets::Vector{Int64}`: List of indices which are not vertices
     - The last hull includes its inner points, so some of the points inside it are not vertices of the hull
+- `significance_level::Float64`: The significance level used to calculate the hulls' associated probabilities
+- `hulls_probabilities::Vector{Vector{Int64}}`: The confidence interval associated with each convex hull in the form:
+```
+    [
+        [
+            (lower end of hull 1 interval),
+            (upper end of hull 1 interval)
+        ],
+        [
+            (lower end of hull 2 interval),
+            (upper end of hull 2 interval)
+        ],
+        (one entry per convex hull)
+    ]
+```
+
 """
-function convex_hulls(X::Matrix{T}) where T<:Float64
+mutable struct HullsInfo
+    index_sets::Vector{Vector{Int64}}
+    non_vertices::Vector{Int64}
+    significance_level::Float64
+    probabilities::Vector{Vector{Float64}}
+end
+
+"""
+    calculate_convex_hulls(X)
+
+Calculates the convex hulls associated with the given matrix of points
+
+Calculates the outer hull, removes the points present in the hulls, calculate the inner hull, repeat to calculate all hulls
+*Currently does this with a LP model where it tries to create each point with a convex combination of the rest
+*Looking into faster ways of solving this problem, since it is by far the biggest bottleneck
+
+# Arguments
+- `X::Matrix{T}`: Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
+
+# Returns
+- Convex hulls structure that can be passed to a model builder function
+"""
+function calculate_convex_hulls(X::Matrix{T}) where T<:Float64
     N, D = size(X)
 
     # building initial model
@@ -118,6 +152,6 @@ function convex_hulls(X::Matrix{T}) where T<:Float64
         end
     end
 
-    # return indices of each hull and indices which are not vertices (they go inside the last set)
-    return hulls_idx_vector, non_vertex_points
+    # return HullsInfo struct without probabilities
+    return HullsInfo(hulls_idx_vector, non_vertex_points, NaN, [[] for hull in hulls_idx_vector])
 end

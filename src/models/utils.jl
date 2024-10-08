@@ -21,20 +21,3 @@ Given an optimized PolieDRO model and a matrix of points, evaluate these points 
 # Assertions
 - Model must be optimized
 """
-
-
-"""
-PolieDRO model structure
-
-# Fields
-- `model::GenericModel`: JuMP model where the DRO problem is defined
-- `β0::Float64`: The intercept term of the model solution
-- `β1::Vector{Float64}`: The vector of coefficients of the model solution
-- `optimized::Bool`: If the model has been solved or not
-"""
-mutable struct PolieDROModel
-    model::GenericModel
-    β0::Float64
-    β1::Vector{Float64}
-    optimized::Bool
-end

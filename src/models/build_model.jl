@@ -1,6 +1,24 @@
 export build_model
 
 """
+PolieDRO model structure
+
+Stores PolieDRO model information, such as optimized parameters and the inner JuMP model
+
+# Fields
+- `model::GenericModel`: JuMP model where the DRO problem is defined
+- `β0::Float64`: The intercept term of the model solution
+- `β1::Vector{Float64}`: The vector of coefficients of the model solution
+- `optimized::Bool`: If the model has been solved or not
+"""
+mutable struct PolieDROModel
+    model::GenericModel
+    β0::Float64
+    β1::Vector{Float64}
+    optimized::Bool
+end
+
+"""
     build_model(X, y, loss_function, point_evaluator; significance_level=0.05)
 
 
@@ -17,6 +35,11 @@ Calculates the convex hulls and probabilities associated with the given data and
     - Function must have a method `f(x::Vector{T}, y::T, β0::T, β1::Vector{T})` where `T` is `Float64`
 - `point_evaluator::Function`: A function to evaluate a given point x and the optimized parameters β0, β1
     - Function must have a method `f(x::Vector{T}, β0::T, β1::Vector{T})` where `T` is `Float64`
+
+Optionals
+- `hulls::Union{HullsInfo,Nothing}`: Pre-calculated convex hulls, output of `calculate_convex_hulls`.
+    - Default value: nothing (calculates hulls)
+    - Pre-calculated hulls are useful if many models are being tested on the same data, since the hulls only have to be calculated once.
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
     - Default value: `0.05`
 
@@ -30,7 +53,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 - No `Infinite` or `NaN` values in either `X` or `y`
 - No duplicate points in `X`
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_evaluator::Function; significance_level::Float64=0.05) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05) where T<:Float64
     N, D = size(X)
 
     # checks on matrices to assert consistencies
@@ -44,10 +67,22 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_
     # no duplicate rows in X matrix
     @assert length(unique(eachrow(X))) == N "No duplicate rows allowed in X matrix"
 
-    println("Calculating convex hulls...")
-    Xhulls, not_vertices = ConvexHulls.convex_hulls(X)
-    println("Calculating associated probabilities...")
-    p = ConvexHulls.hulls_probabilities(Xhulls, significance_level)
+    # calculating hulls and probabilities
+    if isnothing(hulls)
+        println("Calculating convex hulls...")
+        hulls_struct = calculate_convex_hulls(X)
+    else
+        hulls_struct = hulls
+    end
+    
+    if isnan(hulls_struct.significance_level)
+        println("Calculating associated probabilities...")
+        calculate_hulls_probabilities(hulls_struct, significance_level)
+    end
+
+    Xhulls = hulls_struct.index_sets
+    not_vertices = hulls_struct.non_vertices
+    p = hulls_struct.probabilities
 
     println("Building JuMP model...")
 
@@ -102,6 +137,11 @@ The loss function in this case is a maximum of a group of functions, modeled as 
     - This method allows you to use multiple linear functions instead of a piecewise linear one and use a linear solver
 - `point_evaluator::Function`: A function to evaluate a given point `x` and the optimized parameters β0, β1
     - Function must have a method `f(x::Vector{T}, β0::T, β1::Vector{T})` where `T` is `Float64`
+
+Optionals
+- `hulls::Union{HullsInfo,Nothing}`: Pre-calculated convex hulls, output of `calculate_convex_hulls`.
+    - Default value: nothing (calculates hulls)
+    - Pre-calculated hulls are useful if many models are being tested on the same data, since the hulls only have to be calculated once.
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
     - Default value: `0.05`
 
@@ -115,7 +155,7 @@ The loss function in this case is a maximum of a group of functions, modeled as 
 - No `Infinite` or `NaN` values in either `X` or `y`
 - No duplicate points in `X`
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function}, point_evaluator::Function; significance_level::Float64=0.05) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function}, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05) where T<:Float64
     N, D = size(X)
 
     # checks on matrices to assert consistencies
@@ -129,10 +169,22 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function
     # no duplicate rows in X matrix
     @assert length(unique(eachrow(X))) == N "No duplicate rows allowed in X matrix"
 
-    println("Calculating convex hulls...")
-    Xhulls, not_vertices = ConvexHulls.convex_hulls(X)
-    println("Calculating associated probabilities...")
-    p = ConvexHulls.hulls_probabilities(Xhulls, significance_level)
+    # calculating hulls and probabilities
+    if isnothing(hulls)
+        println("Calculating convex hulls...")
+        hulls_struct = calculate_convex_hulls(X)
+    else
+        hulls_struct = hulls
+    end
+    
+    if isnan(hulls_struct.significance_level)
+        println("Calculating associated probabilities...")
+        calculate_hulls_probabilities(hulls_struct, significance_level)
+    end
+
+    Xhulls = hulls_struct.index_sets
+    not_vertices = hulls_struct.non_vertices
+    p = hulls_struct.probabilities
 
     println("Building JuMP model...")
 

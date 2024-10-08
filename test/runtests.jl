@@ -2,8 +2,7 @@ using Test
 using DataFrames
 using Statistics, JuMP, UCIData
 using MLJ, Ipopt, MLJLinearModels, MLJLIBSVMInterface
-include("../src/ConvexHulls.jl")
-include("../src/PolieDRO.jl")
+using PolieDRO
 include("../test/dataset_aux.jl")
 
 # Function to build test matrices for the convex hulls algorithm
@@ -38,23 +37,25 @@ Testing convex hulls creation on hypercubes
     N = 4
     for D = 2:10
         @testset "Hypercube $(D)D tests" begin
+            println("Testing at $(D) dimensions")
+
             # hypercube tests
             X_1 = hypercubes_matrix(N, D)
-            hulls_X_1, _ = ConvexHulls.convex_hulls(X_1)
+            hulls_struct = PolieDRO.calculate_convex_hulls(X_1)
             for n = 1:N
                 hull = N-n+1
-                @test issetequal(hulls_X_1[hull], [i for i in (n-1)*(2^D)+1:(n)*(2^D)])
+                @test issetequal(hulls_struct.index_sets[hull], [i for i in (n-1)*(2^D)+1:(n)*(2^D)])
             end
     
             # including origin point
             X_2 = vcat([0 for i = 1:D]', X_1)
-            hulls_X_2, _ = ConvexHulls.convex_hulls(X_2)
+            hulls_struct = PolieDRO.calculate_convex_hulls(X_2)
             for n = 1:N
                 hull = N-n+1
                 if hull==N
-                    @test issetequal(hulls_X_2[hull], [i for i in 1:(n)*(2^D)+1])
+                    @test issetequal(hulls_struct.index_sets[hull], [i for i in 1:(n)*(2^D)+1])
                 else
-                    @test issetequal(hulls_X_2[hull], [i for i in (n-1)*(2^D)+2:(n)*(2^D)+1])
+                    @test issetequal(hulls_struct.index_sets[hull], [i for i in (n-1)*(2^D)+2:(n)*(2^D)+1])
                 end
             end
         end
@@ -73,8 +74,9 @@ Testing convex hulls probability intervals calculation
         @testset "$(N) hypercubes tests" begin
             # hypercube tests
             X = hypercubes_matrix(N, D)
-            hulls_X, _ = ConvexHulls.convex_hulls(X)
-            probabilities_X = ConvexHulls.hulls_probabilities(hulls_X, 0.05)
+            hulls_struct = PolieDRO.calculate_convex_hulls(X)
+            PolieDRO.calculate_hulls_probabilities(hulls_struct, 0.05)
+            probabilities_X = hulls_struct.probabilities
 
             expected_probability = 1.0
             for i in eachindex(probabilities_X)
@@ -120,7 +122,7 @@ All have ~90% PolieDRO and SVC accuracy, if they fail it means something changed
         Xtest_m = Matrix{Float64}(Xtest)
 
         # training PolieDRO
-        model, hl_evaluator = PolieDRO.build_model(Xtrain_m, ytrain; loss_function=PolieDRO.hinge_loss)
+        model, hl_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.hinge_loss)
         println("Solving PolieDRO model...")
         PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
         println("Evaluating PolieDRO model...")
@@ -175,7 +177,7 @@ All have ~90% PolieDRO and Logistic Loss accuracy, if they fail it means somethi
         Xtest_m = Matrix{Float64}(Xtest)
 
         # training PolieDRO
-        model, ll_evaluator = PolieDRO.build_model(Xtrain_m, ytrain; loss_function=PolieDRO.logistic_loss)
+        model, ll_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
         println("Solving PolieDRO model...")
         PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
         println("Evaluating PolieDRO model...")
@@ -209,9 +211,20 @@ end
 Testing on verified datasets
 All have similar PolieDRO and Lasso error, if they fail it means something changed for the worse
 =#
-@testset "MSE Regression tests" begin
+@testset "Regression tests" begin
     # testing on some regression datasets
     some_datasets = ["auto-mpg", "housing", "yacht-hydrodynamics"]
+
+    # MAE implementation functions
+    function mae_function_1(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
+        return (y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+    end
+    function mae_function_2(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
+        return -(y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+    end
+    function mae_point_evaluator(x::Vector{T}, β0::T, β1::Vector{T}) where T<:Float64
+        return β0 + β1'x
+    end
 
     for dataset in some_datasets
         println("===================")
@@ -231,12 +244,20 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
         Xtest_m = Matrix{Float64}(Xtest)
 
         # training PolieDRO
-        println("Building PolieDRO model...")
-        model, mse_evaluator = PolieDRO.build_model(Xtrain_m, ytrain; loss_function=PolieDRO.mse_loss)
-        println("Solving PolieDRO model...")
+        data_hulls = PolieDRO.calculate_convex_hulls(Xtrain_m)
+        println("Building PolieDRO MSE model...")
+        model, mse_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss; hulls=data_hulls)
+        println("Solving PolieDRO MSE model...")
         PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
-        println("Evaluating PolieDRO model...")
-        ypoliedro = mse_evaluator(model, Xtest_m)
+        println("Evaluating PolieDRO MSE model...")
+        ypoliedro_mse = mse_evaluator(model, Xtest_m)
+
+        println("Building PolieDRO MAE model...")
+        model, mae_evaluator = PolieDRO.build_model(Xtrain_m, ytrain, [mae_function_1, mae_function_2], mae_point_evaluator; hulls=data_hulls)
+        println("Solving PolieDRO MAE model...")
+        PolieDRO.solve_model!(model, Ipopt.Optimizer; silent=true)
+        println("Evaluating PolieDRO MAE model...")
+        ypoliedro_mae = mae_evaluator(model, Xtest_m)
 
         # comparing to MLJ Lasso
         println("Fitting Lasso...")
@@ -245,16 +266,19 @@ All have similar PolieDRO and Lasso error, if they fail it means something chang
         ylasso = predict(mach, Xtest)
 
         println("Calculating error metrics...")
-        mse_poliedro = mean([(ypoliedro[i] - ytest[i])^2 for i in eachindex(ytest)])
+        mse_poliedro_mse = mean([(ypoliedro_mse[i] - ytest[i])^2 for i in eachindex(ytest)])
+        mse_poliedro_mae = mean([(ypoliedro_mae[i] - ytest[i])^2 for i in eachindex(ytest)])
         mse_lasso = mean([(ylasso[i] - ytest[i])^2 for i in eachindex(ytest)])
 
         println("MSE on $(dataset) dataset")
-        println("PolieDRO = $(mse_poliedro)")
+        println("PolieDRO MAE = $(mse_poliedro_mae)")
+        println("PolieDRO MSE = $(mse_poliedro_mse)")
         println("Lasso = $(mse_lasso)")
         println("===================")
 
         # test against lasso+25% performance
         # model should never be much worse than lasso
-        @test mse_poliedro <= mse_lasso*1.25
+        @test mse_poliedro_mse <= mse_lasso*1.25
+        @test mse_poliedro_mae <= mse_lasso*1.25
     end
 end
