@@ -2,13 +2,14 @@ module dataset_aux
 using DataFrames, CategoricalArrays, MLJ, StatsBase
 
 # one hot encoding function
-function one_hot_encode(df::DataFrame)::DataFrame
+function one_hot_encode(df::DataFrame)
     # calculate the threshold for 20% of the total row count
     # columns with too many categories for their row count will be dropped
     threshold = 0.2 * nrow(df)
     
     # collect the names of the categorical columns
     categorical_cols = [col for col in names(df) if eltype(df[!, col]) <: CategoricalValue]
+    onehot_cols = []
     
     for col in categorical_cols
         # Get the levels of the categorical column
@@ -19,6 +20,7 @@ function one_hot_encode(df::DataFrame)::DataFrame
             for category in categories
                 # create new column for each category
                 new_col_name = Symbol("$(col)_$(string(category))")
+                push!(onehot_cols, new_col_name)
                 df[!, new_col_name] = ifelse.(df[!, col] .== category, 1.0, 0.0)
             end
         end
@@ -27,7 +29,7 @@ function one_hot_encode(df::DataFrame)::DataFrame
     # Drop the original categorical columns
     df = select(df, Not(categorical_cols))
     
-    return df
+    return df, onehot_cols
 end
 
 # prepare df for usage
@@ -55,7 +57,8 @@ function treat_df(df; classification=false)
     y = treated_df[:,end]
 
     # one-hot encoding categorical variables in X
-    X = one_hot_encode(X)
+    Xnew, onehot_cols = one_hot_encode(X)
+    X = Xnew
 
     # drop duplicates
     mask = nonunique(X)
@@ -82,7 +85,7 @@ function treat_df(df; classification=false)
     end
 
     # standardize X
-    X = mapcols(zscore, X)
+    X = mapcols(zscore, X;cols=Not(onehot_cols))
 
     # removing NaN columns
     threshold = 0.3 * nrow(X)
@@ -100,9 +103,10 @@ function treat_df(df; classification=false)
         y = zscore(y)
     end
 
-    (Xtrain, Xtest), (ytrain, ytest) = partition((X, y), 0.8, rng=12345, multi=true)
+    # split in 5 pieces and return
+    Xsplits, Ysplits = partition((X, y), 0.2, 0.2, 0.2, 0.2, rng=123, multi=true)
 
-    return Xtrain, Xtest, ytrain, ytest
+    return Xsplits, Ysplits
 end
 
 end # module
