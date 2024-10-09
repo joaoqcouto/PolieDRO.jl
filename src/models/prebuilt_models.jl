@@ -5,7 +5,7 @@ export build_model, LossFunctions
 @enum LossFunctions hinge_loss logistic_loss mse_loss mae_loss
 
 """
-    build_model(X, y, loss_function, point_evaluator; significance_level=0.05)
+    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.05)
 
 Build model function (pre-implemented loss functions)
 

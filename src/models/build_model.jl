@@ -19,7 +19,7 @@ mutable struct PolieDROModel
 end
 
 """
-    build_model(X, y, loss_function, point_evaluator; significance_level=0.05)
+    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.05)
 
 
 Build model function (custom loss function version)
@@ -77,7 +77,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_
     
     if isnan(hulls_struct.significance_level)
         println("Calculating associated probabilities...")
-        calculate_hulls_probabilities(hulls_struct, significance_level)
+        calculate_hulls_probabilities!(hulls_struct, significance_level)
     end
 
     Xhulls = hulls_struct.index_sets
@@ -119,7 +119,7 @@ end
 
 
 """
-    build_model(X, y, loss_functions, point_evaluator; significance_level=0.05)
+    build_model(X, y, loss_functions, point_evaluator; hulls=nothing, significance_level=0.05)
 
 
 Build model function (custom epigraph version)
@@ -179,7 +179,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function
     
     if isnan(hulls_struct.significance_level)
         println("Calculating associated probabilities...")
-        calculate_hulls_probabilities(hulls_struct, significance_level)
+        calculate_hulls_probabilities!(hulls_struct, significance_level)
     end
 
     Xhulls = hulls_struct.index_sets
