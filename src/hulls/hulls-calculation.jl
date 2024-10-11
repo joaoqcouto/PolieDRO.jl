@@ -23,10 +23,10 @@ Not having to recalculate convex hulls drastically reduces model training time
         (one entry per convex hull)
     ]
 ```
-- `index_sets::Vector{Int64}`: List of indices which are not vertices
+- `non_vertices::Vector{Int64}`: List of indices which are not vertices
     - The last hull includes its inner points, so some of the points inside it are not vertices of the hull
 - `significance_level::Float64`: The significance level used to calculate the hulls' associated probabilities
-- `hulls_probabilities::Vector{Vector{Int64}}`: The confidence interval associated with each convex hull in the form:
+- `probabilities::Vector{Vector{Int64}}`: The confidence interval associated with each convex hull in the form:
 ```
     [
         [
@@ -59,7 +59,7 @@ Calculates the outer hull, removes the points present in the hulls, calculate th
 *Looking into faster ways of solving this problem, since it is by far the biggest bottleneck
 
 # Arguments
-- `X::Matrix{T}`: Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
+- `X::Matrix{Float64}`: Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
 
 # Returns
 - Convex hulls structure that can be passed to a model builder function
