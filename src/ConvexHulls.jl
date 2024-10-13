@@ -1,5 +1,5 @@
 # dependencies
-using JuMP, HiGHS, Distributions
+using JuMP, GLPK, Distributions
 
 # calculating hulls
 include("hulls/hulls-calculation.jl")

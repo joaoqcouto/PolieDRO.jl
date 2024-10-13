@@ -68,7 +68,7 @@ function calculate_convex_hulls(X::Matrix{T}) where T<:Float64
     N, D = size(X)
 
     # building initial model
-    model = JuMP.Model(HiGHS.Optimizer)
+    model = JuMP.Model(GLPK.Optimizer)
     set_silent(model)
 
     # list of vector of indices for each hull (outer -> inner)
@@ -79,78 +79,60 @@ function calculate_convex_hulls(X::Matrix{T}) where T<:Float64
     @variable(model, α[i=1:N] .>= 0)
     @constraint(model, sum(α) == 1)
 
-    # building problem for first point
-    i = 1
-    c = zeros(N)
-    c[i] = 100
-    Xv = view(X,i,:)
     Xtp = permutedims(X)
-    @constraint(model, cc,  Xtp*α .== Xv)
-    @objective(model, Min, sum(c[i]*α[i] for i in 1:N))
+    @constraint(model, cc,  Xtp*α .== view(X,1,:))
 
-    # while there are more remaining points than D
-    # at least D+1 points are necessary for the hulls
+    # until we can't make more hulls
     n_hulls = 1
     first_free_point = 1
-    while sum(free_points) > D
-        println("Calculating hull $(n_hulls)...")
-
+    while true
+        # going through points to make a hull
         hull_indices = Vector{Int64}()
-        for i in first_free_point+1:N+1
-            # skip point if it's already associated to a hull
-            if (free_points[i-1] == 0) continue end
+        println("Hull $(n_hulls)...")
+        for i in first_free_point:N
+            # skipping points already in a hull
+            if (free_points[i] == 0) continue end
 
-            # solving current problem
+            # set point constraint
+            set_normalized_rhs.(cc,view(X,i,:))
+
+            @objective(model, Min, α[i])
+
+            # solving point
             JuMP.optimize!(model)
             if (objective_value(model) > 0)
-                # vertex found, no way to build it as a combination of other points
-                push!(hull_indices, i-1)
-                free_points[i-1] = 0
+                # point is vertex
+                push!(hull_indices, i)
+                free_points[i] = 0
             end
-    
-            if (i == N+1) break end # there is no next vertex
-    
-            # update objective
-            c[i-1]=0
-            c[i]=100
-            @objective(model, Min, sum(c[i]*α[i] for i in 1:N))
-    
-            # update constraint
-            Xv = view(X,i,:)
-            set_normalized_rhs.(cc,Xv)
         end
 
-        # store hulls
-        push!(hulls_idx_vector, hull_indices)
+        # quit if there are too few points in this hull (no progress)
+        if length(hull_indices) < D
+            println("No more hulls can be formed")
+            for i in hull_indices free_points[i] = 1 end
+            break
+        end
 
+        # storing hull
+        push!(hulls_idx_vector, hull_indices)
+        n_hulls += 1
+
+        # updating first free point
         first_free_point = findfirst(==(1), free_points)
 
-        # if there are no remaining free points, end
-        if isnothing(first_free_point) break end
-
-        # update objective
-        # already associated points have high cost (they shouldn't be used in the convex combination)
-        for i in 1:N
-            c[i] = free_points[i]==1 ? 0 : 100
+        # locking points in hull to 0 (can't be used)
+        for i in hull_indices
+            fix(α[i], 0; force=true)
         end
-        c[first_free_point] = 100
-        @objective(model, Min, sum(c[i]*α[i] for i in 1:N))
 
-        # update constraint
-        Xv = view(X,first_free_point,:)
-        set_normalized_rhs.(cc,Xv)
-
-        n_hulls += 1
+        # quit if there are no points left (it's over)
+        if isnothing(first_free_point) println("All point are in hulls"); break end
     end
 
-    non_vertex_points = Int64[]
-    for i in 1:N
-        if free_points[i] == 1
-            # add free points to list of non vertices and to last hull
-            push!(non_vertex_points, i)
-            push!(hulls_idx_vector[end], i)
-        end
-    end
+    # create list of non vertices and add to last hull
+    non_vertex_points = [i for i in 1:N if free_points[i] == 1]
+    append!(hulls_idx_vector[end], non_vertex_points)
 
     # return HullsInfo struct without probabilities
     return HullsInfo(hulls_idx_vector, non_vertex_points, NaN, [[] for hull in hulls_idx_vector])
