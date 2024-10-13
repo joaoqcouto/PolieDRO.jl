@@ -14,7 +14,7 @@ Modifies the struct with the results and sets the `optimized` bool in it to true
     - Default: Ipopt optimizer
     - NOTE: For the logistic and MSE models, a nonlinear solver is necessary
 - `silent::Bool`: Sets the flag to solve the model silently (without logs)
-    - Default value: `false`
+    - Default value: `true`
 - `attributes::Union{Nothing, Dict{String}}`: Sets optimizer attribute flags given a dictionary with entries `attribute => value`
     - Default value: `nothing`
 """

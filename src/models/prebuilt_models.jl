@@ -17,6 +17,8 @@ Calculates the convex hulls and probabilities associated with the given data and
 - `loss_function::LossFunctions`: One of the given loss functions implemented in the enumerator
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
     - Default value: `0.05`
+- `silent::Bool`: Sets the flag to build the hulls silently (without logs)
+    - Default value: `true`
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
@@ -29,7 +31,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 - No duplicate points in `X`
 - For classification models (hinge and logistic loss) all values in y must be either 1 or -1
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05, silent::Bool=true) where T<:Float64
     if (loss_function == hinge_loss)
         # classification problem: y values are all either 1 or -1
         @assert all([y[i] == 1 || y[i] == -1 for i in eachindex(y)]) "There is a value in y other than 1 or -1"
@@ -47,7 +49,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
             return β1'x - β0
         end
 
-        return build_model(X, y, [hl_1, hl_2], hl_point_evaluator; hulls=hulls, significance_level=significance_level)
+        return build_model(X, y, [hl_1, hl_2], hl_point_evaluator; hulls=hulls, significance_level=significance_level, silent=silent)
 
     elseif (loss_function == logistic_loss)
         # classification problem: y values are all either 1 or -1
@@ -63,7 +65,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
             return exp(β0 + β1'x)/(1+exp(β0 + β1'x))
         end
 
-        return build_model(X, y, ll_function, ll_point_evaluator; hulls=hulls, significance_level=significance_level)
+        return build_model(X, y, ll_function, ll_point_evaluator; hulls=hulls, significance_level=significance_level, silent=silent)
 
     elseif (loss_function == mse_loss)
         # mse loss function
@@ -76,7 +78,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
             return β0 + β1'x
         end
 
-        return build_model(X, y, mse_function, mse_point_evaluator; hulls=hulls, significance_level=significance_level)
+        return build_model(X, y, mse_function, mse_point_evaluator; hulls=hulls, significance_level=significance_level, silent=silent)
 
     elseif (loss_function == mae_loss)
         # mae loss epigraph define as above these two
@@ -92,7 +94,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
             return β0 + β1'x
         end
 
-        return build_model(X, y, [mae_1, mae_2], mae_point_evaluator; hulls=hulls, significance_level=significance_level)
+        return build_model(X, y, [mae_1, mae_2], mae_point_evaluator; hulls=hulls, significance_level=significance_level, silent=silent)
 
     end
 

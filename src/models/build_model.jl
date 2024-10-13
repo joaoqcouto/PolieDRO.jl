@@ -42,6 +42,8 @@ Optionals
     - Pre-calculated hulls are useful if many models are being tested on the same data, since the hulls only have to be calculated once.
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
     - Default value: `0.05`
+- `silent::Bool`: Sets the flag to build the hulls silently (without logs)
+    - Default value: `true`
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
@@ -53,7 +55,7 @@ Optionals
 - No `Infinite` or `NaN` values in either `X` or `y`
 - No duplicate points in `X`
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05, silent::Bool=true) where T<:Float64
     N, D = size(X)
 
     # checks on matrices to assert consistencies
@@ -69,14 +71,14 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_
 
     # calculating hulls and probabilities
     if isnothing(hulls)
-        println("Calculating convex hulls...")
-        hulls_struct = calculate_convex_hulls(X)
+        if (!silent) println("Calculating convex hulls...") end
+        hulls_struct = calculate_convex_hulls(X;silent=silent)
     else
         hulls_struct = hulls
     end
     
     if isnan(hulls_struct.significance_level)
-        println("Calculating associated probabilities...")
+        if (!silent) println("Calculating associated probabilities...") end
         calculate_hulls_probabilities!(hulls_struct, significance_level)
     end
 
@@ -84,7 +86,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_
     not_vertices = hulls_struct.non_vertices
     p = hulls_struct.probabilities
 
-    println("Building JuMP model...")
+    if (!silent) println("Building JuMP model...") end
 
     nhulls = length(Xhulls)
     model = Model()
@@ -119,7 +121,7 @@ end
 
 
 """
-    build_model(X, y, loss_functions, point_evaluator; hulls=nothing, significance_level=0.05)
+    build_model(X, y, loss_functions, point_evaluator; hulls=nothing, significance_level=0.05, silent=true)
 
 
 Build model function (custom epigraph version)
@@ -144,6 +146,8 @@ Optionals
     - Pre-calculated hulls are useful if many models are being tested on the same data, since the hulls only have to be calculated once.
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
     - Default value: `0.05`
+- `silent::Bool`: Sets the flag to build the hulls silently (without logs)
+    - Default value: `true`
 
 # Returns
 - An unsolved PolieDROModel struct, that can be solved using the solve_model function
@@ -155,7 +159,7 @@ Optionals
 - No `Infinite` or `NaN` values in either `X` or `y`
 - No duplicate points in `X`
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function}, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function}, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05, silent::Bool=true) where T<:Float64
     N, D = size(X)
 
     # checks on matrices to assert consistencies
@@ -171,14 +175,14 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function
 
     # calculating hulls and probabilities
     if isnothing(hulls)
-        println("Calculating convex hulls...")
-        hulls_struct = calculate_convex_hulls(X)
+        if (!silent) println("Calculating convex hulls...") end
+        hulls_struct = calculate_convex_hulls(X;silent=silent)
     else
         hulls_struct = hulls
     end
     
     if isnan(hulls_struct.significance_level)
-        println("Calculating associated probabilities...")
+        if (!silent) println("Calculating associated probabilities...") end
         calculate_hulls_probabilities!(hulls_struct, significance_level)
     end
 
@@ -186,7 +190,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function
     not_vertices = hulls_struct.non_vertices
     p = hulls_struct.probabilities
 
-    println("Building JuMP model...")
+    if (!silent) println("Building JuMP model...") end
 
     nhulls = length(Xhulls)
     model = Model()

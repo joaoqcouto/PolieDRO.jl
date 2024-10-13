@@ -50,7 +50,7 @@ mutable struct HullsInfo
 end
 
 """
-    calculate_convex_hulls(X)
+    calculate_convex_hulls(X; silent=true)
 
 Calculates the convex hulls associated with the given matrix of points
 
@@ -60,11 +60,13 @@ Calculates the outer hull, removes the points present in the hulls, calculate th
 
 # Arguments
 - `X::Matrix{Float64}`: Matrix NxD of points to calculate the hulls (N = number of points, D = dimension of points)
+- `silent::Bool`: Sets the flag to build the hulls silently (without logs)
+    - Default value: `true`
 
 # Returns
 - Convex hulls structure that can be passed to a model builder function
 """
-function calculate_convex_hulls(X::Matrix{T}) where T<:Float64
+function calculate_convex_hulls(X::Matrix{T}; silent::Bool=true) where T<:Float64
     N, D = size(X)
 
     # building initial model
@@ -88,7 +90,7 @@ function calculate_convex_hulls(X::Matrix{T}) where T<:Float64
     while true
         # going through points to make a hull
         hull_indices = Vector{Int64}()
-        println("Hull $(n_hulls)...")
+        if (!silent) println("Hull $(n_hulls)...") end
         for i in first_free_point:N
             # skipping points already in a hull
             if (free_points[i] == 0) continue end
@@ -109,7 +111,7 @@ function calculate_convex_hulls(X::Matrix{T}) where T<:Float64
 
         # quit if there are too few points in this hull (no progress)
         if length(hull_indices) < D
-            println("No more hulls can be formed")
+            if (!silent) println("No more hulls can be formed") end
             for i in hull_indices free_points[i] = 1 end
             break
         end
@@ -127,7 +129,10 @@ function calculate_convex_hulls(X::Matrix{T}) where T<:Float64
         end
 
         # quit if there are no points left (it's over)
-        if isnothing(first_free_point) println("All point are in hulls"); break end
+        if isnothing(first_free_point)
+            if (!silent) println("All point are in hulls") end
+            break
+        end
     end
 
     # create list of non vertices and add to last hull
