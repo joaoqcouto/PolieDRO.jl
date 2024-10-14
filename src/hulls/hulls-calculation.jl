@@ -110,7 +110,7 @@ function calculate_convex_hulls(X::Matrix{T}; silent::Bool=true) where T<:Float6
         end
 
         # quit if there are too few points in this hull (no progress)
-        if length(hull_indices) < D
+        if length(hull_indices) <= D
             if (!silent) println("No more hulls can be formed") end
             for i in hull_indices free_points[i] = 1 end
             break
