@@ -75,7 +75,7 @@ Testing convex hulls probability intervals calculation
             # hypercube tests
             X = hypercubes_matrix(N, D)
             hulls_struct = PolieDRO.calculate_convex_hulls(X)
-            PolieDRO.calculate_hulls_probabilities!(hulls_struct, 0.05)
+            PolieDRO.calculate_hulls_probabilities!(hulls_struct, 0.1)
             probabilities_X = hulls_struct.probabilities
 
             expected_probability = 1.0

@@ -19,7 +19,7 @@ mutable struct PolieDROModel
 end
 
 """
-    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.05)
+    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.1)
 
 
 Build model function (custom loss function version)
@@ -41,7 +41,7 @@ Optionals
     - Default value: nothing (calculates hulls)
     - Pre-calculated hulls are useful if many models are being tested on the same data, since the hulls only have to be calculated once.
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
-    - Default value: `0.05`
+    - Default value: `0.1`
 - `silent::Bool`: Sets the flag to build the hulls silently (without logs)
     - Default value: `true`
 
@@ -55,7 +55,7 @@ Optionals
 - No `Infinite` or `NaN` values in either `X` or `y`
 - No duplicate points in `X`
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05, silent::Bool=true) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_function::Function, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.1, silent::Bool=true) where T<:Float64
     N, D = size(X)
 
     # checks on matrices to assert consistencies
@@ -121,7 +121,7 @@ end
 
 
 """
-    build_model(X, y, loss_functions, point_evaluator; hulls=nothing, significance_level=0.05, silent=true)
+    build_model(X, y, loss_functions, point_evaluator; hulls=nothing, significance_level=0.1, silent=true)
 
 
 Build model function (custom epigraph version)
@@ -145,7 +145,7 @@ Optionals
     - Default value: nothing (calculates hulls)
     - Pre-calculated hulls are useful if many models are being tested on the same data, since the hulls only have to be calculated once.
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
-    - Default value: `0.05`
+    - Default value: `0.1`
 - `silent::Bool`: Sets the flag to build the hulls silently (without logs)
     - Default value: `true`
 
@@ -159,7 +159,7 @@ Optionals
 - No `Infinite` or `NaN` values in either `X` or `y`
 - No duplicate points in `X`
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function}, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05, silent::Bool=true) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_functions::Vector{Function}, point_evaluator::Function; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.1, silent::Bool=true) where T<:Float64
     N, D = size(X)
 
     # checks on matrices to assert consistencies

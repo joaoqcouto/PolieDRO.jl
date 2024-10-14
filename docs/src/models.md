@@ -85,7 +85,7 @@ Xtrain_m = Matrix{Float64}(Xtrain)
 Xtest_m = Matrix{Float64}(Xtest)
 ```
 
-The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as hinge loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
+The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as hinge loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.1 is used.
 
 Besides the model, the function also returns a predictor function. It can be used to predict points with the optimized model.
 
@@ -155,7 +155,7 @@ Xtrain_m = Matrix{Float64}(Xtrain)
 Xtest_m = Matrix{Float64}(Xtest)
 ```
 
-The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as logistic loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
+The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as logistic loss as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.1 is used.
 
 ```julia
 model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.logistic_loss)
@@ -221,7 +221,7 @@ Xtrain_m = Matrix{Float64}(Xtrain)
 Xtest_m = Matrix{Float64}(Xtest)
 ```
 
-The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as MSE as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.05 is used.
+The model is then built using the training data. It is during this time that the convex hulls are calculated for the data. The loss function is also specified as MSE as a parameter to build the model. A custom significance level can be chosen, here the default value of 0.1 is used.
 
 ```julia
 model, predictor = PolieDRO.build_model(Xtrain_m, ytrain, PolieDRO.mse_loss)

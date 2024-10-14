@@ -5,7 +5,7 @@ export build_model, LossFunctions
 @enum LossFunctions hinge_loss logistic_loss mse_loss mae_loss
 
 """
-    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.05)
+    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.1)
 
 Build model function (pre-implemented loss functions)
 
@@ -16,7 +16,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 - `y::Vector{Float64}`: Dependent variable vector relative to the points in the matrix `X` (size `N`)
 - `loss_function::LossFunctions`: One of the given loss functions implemented in the enumerator
 - `significance_level::Float64`: Used to define a confidence interval for the probabilities associated to the hulls
-    - Default value: `0.05`
+    - Default value: `0.1`
 - `silent::Bool`: Sets the flag to build the hulls silently (without logs)
     - Default value: `true`
 
@@ -31,7 +31,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 - No duplicate points in `X`
 - For classification models (hinge and logistic loss) all values in y must be either 1 or -1
 """
-function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.05, silent::Bool=true) where T<:Float64
+function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; hulls::Union{HullsInfo,Nothing}=nothing, significance_level::Float64=0.1, silent::Bool=true) where T<:Float64
     if (loss_function == hinge_loss)
         # classification problem: y values are all either 1 or -1
         @assert all([y[i] == 1 || y[i] == -1 for i in eachindex(y)]) "There is a value in y other than 1 or -1"
