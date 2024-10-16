@@ -1,11 +1,18 @@
 export build_model, LossFunctions
 
-# Enum to store the implemented loss function values
-# Each one is explained in more detail in the README.md file
+"""
+Loss functions enumerator
+
+# Values
+- `hinge_loss`: Margin-based loss function for classification
+- `logistic_loss`: Probability-based loss function for classification
+- `mse_loss`: Distance-based loss function for regression
+- `mae_loss`: Distance-based loss function for regression
+"""
 @enum LossFunctions hinge_loss logistic_loss mse_loss mae_loss
 
 """
-    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.1)
+    build_model(X, y, loss_function; hulls=nothing, significance_level=0.1, silent=true)
 
 Build model function (pre-implemented loss functions)
 

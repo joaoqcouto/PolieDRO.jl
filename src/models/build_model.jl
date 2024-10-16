@@ -19,7 +19,7 @@ mutable struct PolieDROModel
 end
 
 """
-    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.1)
+    build_model(X, y, loss_function, point_evaluator; hulls=nothing, significance_level=0.1, silent=true)
 
 
 Build model function (custom loss function version)
