@@ -45,7 +45,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
 
         # hinge loss epigraph define as above these two
         function hl_1(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
-            return 1-y*(sum(β1[k]*x[k] for k in eachindex(β1))-β0)
+            return 1 - y*(β1'x - β0)
         end
         function hl_2(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
             return 0
@@ -64,7 +64,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
 
         # logistic loss function
         function ll_function(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
-            return log(1 + exp(-y*(β0+sum(β1[k]*x[k] for k in eachindex(β1)))))
+            return log(1 + exp(-y*(β0 + β1'x)))
         end
 
         # logistic loss evaluator
@@ -77,7 +77,7 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
     elseif (loss_function == mse_loss)
         # mse loss function
         function mse_function(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
-            return (y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))^2
+            return (y-(β0 + β1'x))^2
         end
 
         # mse loss evaluator
@@ -90,10 +90,10 @@ function build_model(X::Matrix{T}, y::Vector{T}, loss_function::LossFunctions; h
     elseif (loss_function == mae_loss)
         # mae loss epigraph define as above these two
         function mae_1(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
-            return (y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+            return y-(β0 + β1'x)
         end
         function mae_2(x::Vector{T}, y::T, β0::VariableRef, β1::Vector{VariableRef}) where T<:Float64
-            return -(y-(β0+sum(β1[k]*x[k] for k in eachindex(β1))))
+            return -y+(β0 + β1'x)
         end
 
         # mae evaluator
