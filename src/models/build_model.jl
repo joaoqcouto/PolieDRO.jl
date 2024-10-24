@@ -32,7 +32,7 @@ Calculates the convex hulls and probabilities associated with the given data and
 - `loss_function::Function`: A loss function to be used in the PolieDRO formulation
     - Has to be convex! (This is not checked)
     - This function defines the solver you will be able to use (for instance, if you use a nonlinear function you will need a nonlinear solver)
-    - Function must have a method `f(x::Vector{T}, y::T, β0::T, β1::Vector{T})` where `T` is `Float64`
+    - Function must have a method `f(x::Vector{Float64}, y::Float64, β0::VariableRef, β1::Vector{VariableRef})`
 - `point_evaluator::Function`: A function to evaluate a given point x and the optimized parameters β0, β1
     - Function must have a method `f(x::Vector{T}, β0::T, β1::Vector{T})` where `T` is `Float64`
 
